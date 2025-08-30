@@ -10,6 +10,36 @@ interface WalletState {
   chainId: number | null
 }
 
+// Constants for localStorage keys
+const WALLET_MANUAL_DISCONNECT_KEY = "wallet_manual_disconnect"
+const WALLET_USER_CONNECTED_KEY = "wallet_user_connected"
+
+// Helper functions for localStorage
+const getStorageValue = (key: string, defaultValue: boolean = false): boolean => {
+  if (typeof window === "undefined") return defaultValue
+  try {
+    const item = localStorage.getItem(key)
+    return item !== null ? JSON.parse(item) : defaultValue
+  } catch {
+    return defaultValue
+  }
+}
+
+const setStorageValue = (key: string, value: boolean): void => {
+  if (typeof window === "undefined") return
+  try {
+    localStorage.setItem(key, JSON.stringify(value))
+  } catch {
+    // Ignore localStorage errors
+  }
+}
+
+// Function to reset the wallet state completely
+export function resetWalletState() {
+  setStorageValue(WALLET_MANUAL_DISCONNECT_KEY, false)
+  setStorageValue(WALLET_USER_CONNECTED_KEY, false)
+}
+
 export function useWallet() {
   const [walletState, setWalletState] = useState<WalletState>({
     address: null,
@@ -51,6 +81,10 @@ export function useWallet() {
         method: "eth_chainId",
       })
 
+      // Reset manual disconnect flag when user manually connects
+      setStorageValue(WALLET_MANUAL_DISCONNECT_KEY, false)
+      setStorageValue(WALLET_USER_CONNECTED_KEY, true)
+
       setWalletState({
         address: accounts[0],
         isConnected: true,
@@ -58,6 +92,8 @@ export function useWallet() {
         error: null,
         chainId: Number.parseInt(chainId, 16),
       })
+
+      console.log("[Wallet Debug] Connected successfully:", accounts[0])
     } catch (error: any) {
       console.error("Failed to connect wallet:", error)
       setWalletState((prev) => ({
@@ -70,6 +106,12 @@ export function useWallet() {
 
   // Disconnect wallet
   const disconnectWallet = useCallback(() => {
+    console.log("[Wallet Debug] Manual disconnect triggered")
+    // Set manual disconnect flag to prevent auto-reconnection
+    setStorageValue(WALLET_MANUAL_DISCONNECT_KEY, true)
+    setStorageValue(WALLET_USER_CONNECTED_KEY, false)
+    
+    // Clear local state immediately
     setWalletState({
       address: null,
       isConnected: false,
@@ -77,11 +119,38 @@ export function useWallet() {
       error: null,
       chainId: null,
     })
+    
+    // Also clear any localStorage that might be caching the connection
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("walletconnect")
+      localStorage.removeItem("WALLETCONNECT_DEEPLINK_CHOICE")
+      
+      // For some wallets, we might need to explicitly disconnect
+      try {
+        // Note: MetaMask doesn't have a programmatic disconnect method
+        // but we're clearing our local state which is the important part
+        console.log("Wallet disconnected locally")
+      } catch (error) {
+        console.log("Wallet disconnect cleanup completed")
+      }
+    }
   }, [])
 
   // Check if already connected on mount
   useEffect(() => {
     if (!isMetaMaskInstalled()) return
+    
+    // Don't auto-reconnect if user manually disconnected OR if user never connected before
+    const manualDisconnect = getStorageValue(WALLET_MANUAL_DISCONNECT_KEY)
+    const userHadConnected = getStorageValue(WALLET_USER_CONNECTED_KEY)
+    
+    console.log("[Wallet Debug] Mount check:", { 
+      manualDisconnect, 
+      userHadConnected,
+      shouldSkipAutoConnect: manualDisconnect || !userHadConnected
+    })
+    
+    if (manualDisconnect || !userHadConnected) return
 
     const checkConnection = async () => {
       try {
@@ -89,7 +158,8 @@ export function useWallet() {
           method: "eth_accounts",
         })
 
-        if (accounts.length > 0) {
+        if (accounts.length > 0 && !manualDisconnect && userHadConnected) {
+          console.log("[Wallet Debug] Auto-reconnecting to:", accounts[0])
           const chainId = await window.ethereum.request({
             method: "eth_chainId",
           })
@@ -101,6 +171,8 @@ export function useWallet() {
             error: null,
             chainId: Number.parseInt(chainId, 16),
           })
+        } else {
+          console.log("[Wallet Debug] Skipping auto-reconnect")
         }
       } catch (error) {
         console.error("Failed to check wallet connection:", error)
@@ -115,6 +187,12 @@ export function useWallet() {
     if (!isMetaMaskInstalled()) return
 
     const handleAccountsChanged = (accounts: string[]) => {
+      // If user manually disconnected, don't reconnect automatically  
+      const manualDisconnect = getStorageValue(WALLET_MANUAL_DISCONNECT_KEY)
+      if (manualDisconnect && accounts.length > 0) {
+        return
+      }
+      
       if (accounts.length === 0) {
         disconnectWallet()
       } else {
@@ -142,6 +220,25 @@ export function useWallet() {
     }
   }, [isMetaMaskInstalled, disconnectWallet])
 
+  // Force disconnect (for logout scenarios)
+  const forceDisconnectWallet = useCallback(() => {
+    console.log("[Wallet Debug] Force disconnect triggered")
+    setStorageValue(WALLET_MANUAL_DISCONNECT_KEY, true)
+    setStorageValue(WALLET_USER_CONNECTED_KEY, false)
+    setWalletState({
+      address: null,
+      isConnected: false,
+      isConnecting: false,
+      error: null,
+      chainId: null,
+    })
+    
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("walletconnect")
+      localStorage.removeItem("WALLETCONNECT_DEEPLINK_CHOICE")
+    }
+  }, [])
+
   // Format address for display
   const formatAddress = useCallback((address: string | null) => {
     if (!address) return ""
@@ -152,6 +249,7 @@ export function useWallet() {
     ...walletState,
     connectWallet,
     disconnectWallet,
+    forceDisconnectWallet,
     isMetaMaskInstalled: isMetaMaskInstalled(),
     formatAddress,
   }

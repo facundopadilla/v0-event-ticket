@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Ticket, Plus, Calendar, Users, Home } from "lucide-react"
 import Link from "next/link"
 import { WalletDashboardSection } from "@/components/wallet-dashboard-section"
+import { SignOutButton } from "@/components/signout-button"
 
 export const dynamic = "force-dynamic"
 
@@ -56,11 +57,12 @@ export default async function DashboardPage() {
               <span className="text-slate-300">
                 Welcome, {profile?.display_name || profile?.email?.split("@")[0] || profile?.alias || "User"}
               </span>
-              <form action="/auth/signout" method="post">
-                <Button variant="ghost" type="submit" className="text-slate-300 hover:text-white">
-                  Sign Out
-                </Button>
-              </form>
+              <SignOutButton 
+                variant="ghost" 
+                className="text-slate-300 hover:text-white"
+              >
+                Sign Out
+              </SignOutButton>
             </div>
           </div>
         </div>
