@@ -17,7 +17,7 @@ export const liskTestnet = {
   name: 'Lisk Sepolia Testnet',
   rpcUrl: 'https://rpc.sepolia-api.lisk.com',
   blockExplorer: 'https://sepolia-blockscout.lisk.com',
-  contractAddress: '0x0000000000000000000000000000000000000000', // Will be updated after deployment
+  contractAddress: '0xBdD45C68f44Ef4d9db4F5dEa4F6f163dac88ac2f', // EventTicketNFT contract deployed
   nativeCurrency: {
     name: 'LSK',
     symbol: 'LSK',
@@ -38,10 +38,10 @@ export const liskMainnet = {
   },
 } as const;
 
-// Contract addresses (will be updated after deployment)
+// Contract addresses (updated after deployment)
 export const CONTRACTS = {
   EVENT_TICKET_NFT: {
     MAINNET: "", // To be deployed
-    TESTNET: ""  // To be deployed  
+    TESTNET: "0xBdD45C68f44Ef4d9db4F5dEa4F6f163dac88ac2f"  // Deployed on Lisk Sepolia
   }
 }
