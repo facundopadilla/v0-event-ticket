@@ -26,7 +26,7 @@ interface Event {
   profiles: {
     display_name: string | null
     alias: string
-  }
+  } | null
 }
 
 interface EventCardProps {
@@ -102,7 +102,7 @@ export function EventCard({ event }: EventCardProps) {
             <h3 className="text-lg font-semibold text-white group-hover:text-cyan-400 transition-colors line-clamp-2">
               {event.title}
             </h3>
-            <p className="text-sm text-slate-400 mt-1">by {event.profiles.display_name || event.profiles.alias}</p>
+            <p className="text-sm text-slate-400 mt-1">by {event.profiles?.display_name || event.profiles?.alias || "Unknown Creator"}</p>
           </div>
           {event.nft_enabled && (
             <Badge variant="secondary" className="bg-gradient-to-r from-violet-500 to-cyan-500 text-white">
