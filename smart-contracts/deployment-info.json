@@ -1,0 +1,18 @@
+{
+  "address": "0xBdD45C68f44Ef4d9db4F5dEa4F6f163dac88ac2f",
+  "network": "liskTestnet", 
+  "chainId": 4202,
+  "deployedAt": "2025-08-30T21:00:00.000Z",
+  "blockExplorer": "https://sepolia-blockscout.lisk.com/address/0xBdD45C68f44Ef4d9db4F5dEa4F6f163dac88ac2f",
+  "contractName": "EventTicketNFT",
+  "description": "NFT contract for event tickets deployed on Lisk Sepolia Testnet",
+  "features": [
+    "Mint event tickets as NFTs",
+    "Maximum 4 tickets per address per event", 
+    "Ticket price: 0.01 LSK",
+    "Ownable contract with admin functions",
+    "Ticket usage tracking"
+  ],
+  "deployer": "0x6aFE9Dc1dEB5Ed8985a38084577abAb446EF3441",
+  "verified": false
+}
