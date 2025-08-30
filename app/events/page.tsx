@@ -40,10 +40,16 @@ async function getPublicEvents() {
   }
 
   // Combine events with profile data
-  const eventsWithProfiles = events.map((event) => ({
-    ...event,
-    profiles: profiles?.find((profile) => profile.id === event.creator_id) || null,
-  }))
+  const eventsWithProfiles = events.map((event) => {
+    const profile = profiles?.find((profile) => profile.id === event.creator_id)
+    return {
+      ...event,
+      profiles: profile || {
+        display_name: null,
+        alias: "Unknown Creator"
+      },
+    }
+  })
 
   return eventsWithProfiles
 }

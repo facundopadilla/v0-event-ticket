@@ -17,7 +17,7 @@ interface Event {
   profiles: {
     display_name: string | null
     alias: string
-  }
+  } | null
 }
 
 interface EventsGridProps {
