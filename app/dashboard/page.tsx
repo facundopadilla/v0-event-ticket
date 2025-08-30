@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Ticket, Plus, Calendar, Users } from "lucide-react"
 import Link from "next/link"
+import { WalletDashboardSection } from "@/components/wallet-dashboard-section"
 
 export const dynamic = "force-dynamic"
 
@@ -46,7 +47,9 @@ export default async function DashboardPage() {
               </span>
             </div>
             <div className="flex items-center gap-4">
-              <span className="text-slate-300">Welcome, {profile?.alias || "User"}</span>
+              <span className="text-slate-300">
+                Welcome, {profile?.display_name || profile?.email?.split("@")[0] || profile?.alias || "User"}
+              </span>
               <form action="/auth/signout" method="post">
                 <Button variant="ghost" type="submit" className="text-slate-300 hover:text-white">
                   Sign Out
@@ -62,6 +65,10 @@ export default async function DashboardPage() {
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-slate-100 mb-2">Dashboard</h1>
           <p className="text-slate-400">Manage your events and tokens</p>
+        </div>
+
+        <div className="mb-8">
+          <WalletDashboardSection savedWalletAddress={profile?.wallet_address} />
         </div>
 
         {/* Quick Actions */}

@@ -10,23 +10,41 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Ticket, ArrowLeft, Calendar, MapPin, Users, FileText } from "lucide-react"
+import { Switch } from "@/components/ui/switch"
+import { Separator } from "@/components/ui/separator"
+import { Ticket, ArrowLeft, Calendar, MapPin, Users, FileText, Coins, Hash } from "lucide-react"
 import { createBrowserClient } from "@/lib/supabase/client"
 import Link from "next/link"
 
-const eventSchema = z.object({
-  title: z.string().min(3, "Title must be at least 3 characters").max(100, "Title must be less than 100 characters"),
-  description: z
-    .string()
-    .min(10, "Description must be at least 10 characters")
-    .max(500, "Description must be less than 500 characters"),
-  date: z.string().min(1, "Date is required"),
-  location: z
-    .string()
-    .min(3, "Location must be at least 3 characters")
-    .max(200, "Location must be less than 200 characters"),
-  maxAttendees: z.number().min(1, "Must allow at least 1 attendee").max(10000, "Maximum 10,000 attendees allowed"),
-})
+const eventSchema = z
+  .object({
+    title: z.string().min(3, "Title must be at least 3 characters").max(100, "Title must be less than 100 characters"),
+    description: z
+      .string()
+      .min(10, "Description must be at least 10 characters")
+      .max(500, "Description must be less than 500 characters"),
+    date: z.string().min(1, "Date is required"),
+    location: z
+      .string()
+      .min(3, "Location must be at least 3 characters")
+      .max(200, "Location must be less than 200 characters"),
+    maxAttendees: z.number().min(1, "Must allow at least 1 attendee").max(10000, "Maximum 10,000 attendees allowed"),
+    nftEnabled: z.boolean().default(false),
+    nftPrice: z.number().min(0.001, "NFT price must be at least 0.001 ETH").optional(),
+    nftSupply: z.number().min(1, "NFT supply must be at least 1").max(10000, "Maximum 10,000 NFTs allowed").optional(),
+  })
+  .refine(
+    (data) => {
+      if (data.nftEnabled) {
+        return data.nftPrice !== undefined && data.nftSupply !== undefined
+      }
+      return true
+    },
+    {
+      message: "NFT price and supply are required when NFTs are enabled",
+      path: ["nftEnabled"],
+    },
+  )
 
 type EventFormData = z.infer<typeof eventSchema>
 
@@ -38,10 +56,16 @@ export default function CreateEventPage() {
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors },
   } = useForm<EventFormData>({
     resolver: zodResolver(eventSchema),
+    defaultValues: {
+      nftEnabled: false,
+    },
   })
+
+  const nftEnabled = watch("nftEnabled")
 
   const onSubmit = async (data: EventFormData) => {
     setIsLoading(true)
@@ -50,7 +74,6 @@ export default function CreateEventPage() {
     try {
       const supabase = createBrowserClient()
 
-      // Get current user
       const {
         data: { user },
         error: userError,
@@ -61,7 +84,6 @@ export default function CreateEventPage() {
         return
       }
 
-      // Create event
       const { data: event, error: eventError } = await supabase
         .from("events")
         .insert({
@@ -71,6 +93,9 @@ export default function CreateEventPage() {
           location: data.location,
           max_attendees: data.maxAttendees,
           creator_id: user.id,
+          nft_enabled: data.nftEnabled,
+          nft_price: data.nftEnabled ? data.nftPrice : null,
+          nft_supply: data.nftEnabled ? data.nftSupply : null,
         })
         .select()
         .single()
@@ -81,7 +106,7 @@ export default function CreateEventPage() {
         return
       }
 
-      // Redirect to dashboard or event details
+      router.refresh()
       router.push("/dashboard")
     } catch (err) {
       console.error("Unexpected error:", err)
@@ -208,6 +233,69 @@ export default function CreateEventPage() {
                   className="bg-slate-800 border-slate-700 text-slate-100 placeholder:text-slate-400 focus:border-violet-500"
                 />
                 {errors.maxAttendees && <p className="text-red-400 text-sm">{errors.maxAttendees.message}</p>}
+              </div>
+
+              {/* NFT Options Section */}
+              <Separator className="bg-slate-700" />
+
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <Label className="text-slate-200 flex items-center gap-2">
+                      <Coins className="w-4 h-4 text-violet-400" />
+                      Enable NFT Tickets
+                    </Label>
+                    <p className="text-sm text-slate-400">
+                      Allow attendees to purchase NFT tickets that they can own and trade
+                    </p>
+                  </div>
+                  <Switch
+                    {...register("nftEnabled")}
+                    className="data-[state=checked]:bg-gradient-to-r data-[state=checked]:from-violet-600 data-[state=checked]:to-cyan-600"
+                  />
+                </div>
+
+                {nftEnabled && (
+                  <div className="space-y-4 pl-6 border-l-2 border-violet-500/30">
+                    {/* NFT Price */}
+                    <div className="space-y-2">
+                      <Label htmlFor="nftPrice" className="text-slate-200 flex items-center gap-2">
+                        <Coins className="w-4 h-4 text-cyan-400" />
+                        NFT Price (ETH)
+                      </Label>
+                      <Input
+                        id="nftPrice"
+                        type="number"
+                        step="0.001"
+                        {...register("nftPrice", { valueAsNumber: true })}
+                        placeholder="0.01"
+                        className="bg-slate-800 border-slate-700 text-slate-100 placeholder:text-slate-400 focus:border-violet-500"
+                      />
+                      {errors.nftPrice && <p className="text-red-400 text-sm">{errors.nftPrice.message}</p>}
+                    </div>
+
+                    {/* NFT Supply */}
+                    <div className="space-y-2">
+                      <Label htmlFor="nftSupply" className="text-slate-200 flex items-center gap-2">
+                        <Hash className="w-4 h-4 text-violet-400" />
+                        NFT Supply
+                      </Label>
+                      <Input
+                        id="nftSupply"
+                        type="number"
+                        {...register("nftSupply", { valueAsNumber: true })}
+                        placeholder="100"
+                        min="1"
+                        max="10000"
+                        className="bg-slate-800 border-slate-700 text-slate-100 placeholder:text-slate-400 focus:border-violet-500"
+                      />
+                      {errors.nftSupply && <p className="text-red-400 text-sm">{errors.nftSupply.message}</p>}
+                      <p className="text-xs text-slate-500">
+                        Maximum number of NFT tickets that can be minted for this event
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Error Message */}

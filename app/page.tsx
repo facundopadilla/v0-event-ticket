@@ -72,6 +72,68 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Navigation Section */}
+      <section className="py-16 bg-slate-900/30">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-2xl lg:text-3xl font-bold mb-4 text-slate-100">Explore Event-Token</h2>
+            <p className="text-lg text-slate-400 max-w-2xl mx-auto">
+              Discover events, buy NFT tickets, and manage your digital collection
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <Link href="/events">
+              <Card className="bg-slate-800/50 border-slate-700 hover:bg-slate-800/70 transition-all duration-200 hover:scale-105 cursor-pointer group">
+                <CardContent className="p-6 text-center">
+                  <div className="w-16 h-16 bg-gradient-to-br from-violet-500 to-violet-600 rounded-xl flex items-center justify-center mb-4 mx-auto group-hover:scale-110 transition-transform">
+                    <Calendar className="w-8 h-8 text-white" />
+                  </div>
+                  <h3 className="text-xl font-semibold mb-2 text-slate-100">Browse Events</h3>
+                  <p className="text-slate-400 text-sm">Discover upcoming events and purchase NFT tickets</p>
+                </CardContent>
+              </Card>
+            </Link>
+
+            <Link href="/marketplace">
+              <Card className="bg-slate-800/50 border-slate-700 hover:bg-slate-800/70 transition-all duration-200 hover:scale-105 cursor-pointer group">
+                <CardContent className="p-6 text-center">
+                  <div className="w-16 h-16 bg-gradient-to-br from-cyan-500 to-cyan-600 rounded-xl flex items-center justify-center mb-4 mx-auto group-hover:scale-110 transition-transform">
+                    <Ticket className="w-8 h-8 text-white" />
+                  </div>
+                  <h3 className="text-xl font-semibold mb-2 text-slate-100">Marketplace</h3>
+                  <p className="text-slate-400 text-sm">Buy and sell NFT event tickets securely</p>
+                </CardContent>
+              </Card>
+            </Link>
+
+            <Link href="/my-tickets">
+              <Card className="bg-slate-800/50 border-slate-700 hover:bg-slate-800/70 transition-all duration-200 hover:scale-105 cursor-pointer group">
+                <CardContent className="p-6 text-center">
+                  <div className="w-16 h-16 bg-gradient-to-br from-violet-500 to-cyan-500 rounded-xl flex items-center justify-center mb-4 mx-auto group-hover:scale-110 transition-transform">
+                    <Users className="w-8 h-8 text-white" />
+                  </div>
+                  <h3 className="text-xl font-semibold mb-2 text-slate-100">My Tickets</h3>
+                  <p className="text-slate-400 text-sm">View and manage your NFT ticket collection</p>
+                </CardContent>
+              </Card>
+            </Link>
+
+            <Link href="/dashboard">
+              <Card className="bg-slate-800/50 border-slate-700 hover:bg-slate-800/70 transition-all duration-200 hover:scale-105 cursor-pointer group">
+                <CardContent className="p-6 text-center">
+                  <div className="w-16 h-16 bg-gradient-to-br from-cyan-500 to-violet-500 rounded-xl flex items-center justify-center mb-4 mx-auto group-hover:scale-110 transition-transform">
+                    <Shield className="w-8 h-8 text-white" />
+                  </div>
+                  <h3 className="text-xl font-semibold mb-2 text-slate-100">Dashboard</h3>
+                  <p className="text-slate-400 text-sm">Create and manage your events and tokens</p>
+                </CardContent>
+              </Card>
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {/* Features Section */}
       <section className="py-20 bg-slate-900/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

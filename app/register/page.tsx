@@ -13,6 +13,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Ticket, ArrowLeft, Loader2 } from "lucide-react"
 import { createBrowserClient } from "@/lib/supabase/client"
+import { Separator } from "@/components/ui/separator"
+import { WalletConnectButton } from "@/components/wallet-connect-button"
 
 const registerSchema = z
   .object({
@@ -61,7 +63,8 @@ export default function RegisterPage() {
         email: data.email,
         password: data.password,
         options: {
-          emailRedirectTo: process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL || `${window.location.origin}/dashboard`,
+          emailRedirectTo:
+            process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL || `${window.location.origin}/auth/check-email`,
           data: {
             display_name: data.displayName,
           },
@@ -80,13 +83,35 @@ export default function RegisterPage() {
       }
 
       if (authData.user) {
-        setError("Registration successful! Please check your email to confirm your account before signing in.")
+        router.push("/auth/check-email")
       }
     } catch (err) {
       console.error("Registration error:", err)
       setError("An unexpected error occurred. Please try again.")
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const handleWalletConnect = async (address: string) => {
+    try {
+      // Check if wallet is already registered
+      const { data: existingProfile } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("wallet_address", address)
+        .single()
+
+      if (existingProfile) {
+        setError("This wallet address is already registered. Please use a different wallet or sign in.")
+        return
+      }
+
+      // For now, just show a message that they need to complete registration with email
+      setError("Wallet connected! Please complete registration with your email and password below.")
+    } catch (err) {
+      console.error("Wallet registration error:", err)
+      setError("Failed to connect wallet. Please try again.")
     }
   }
 
@@ -112,10 +137,22 @@ export default function RegisterPage() {
           <CardHeader className="text-center">
             <CardTitle className="text-2xl text-slate-100">Create Your Account</CardTitle>
             <CardDescription className="text-slate-400">
-              Enter your email and choose a display name to get started
+              Connect your wallet or enter your email to get started
             </CardDescription>
           </CardHeader>
           <CardContent>
+            <div className="space-y-4 mb-6">
+              <WalletConnectButton onConnect={handleWalletConnect} className="w-full" />
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <Separator className="w-full bg-slate-700" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-slate-900 px-2 text-slate-500">Or register with email</span>
+                </div>
+              </div>
+            </div>
+
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               {error && (
                 <Alert

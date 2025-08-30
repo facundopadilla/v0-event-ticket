@@ -1,11 +1,12 @@
 import { createServerClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Ticket, Calendar, MapPin, Users, ArrowLeft, Edit } from "lucide-react"
 import Link from "next/link"
 import { DeleteEventButton } from "./delete-event-button"
+import { TicketPurchaseCard } from "@/components/ticket-purchase-card"
 
 export const dynamic = "force-dynamic"
 
@@ -169,21 +170,7 @@ export default async function EventDetailsPage({ params }: EventDetailsPageProps
 
           {/* Sidebar */}
           <div className="space-y-6">
-            <Card className="bg-slate-900/50 border-slate-800">
-              <CardHeader>
-                <CardTitle className="text-slate-100">Event Tokens</CardTitle>
-                <CardDescription className="text-slate-400">Manage access tokens for this event</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-4">
-                  <Ticket className="w-12 h-12 text-slate-600 mx-auto mb-4" />
-                  <p className="text-slate-400 mb-4">No tokens generated yet</p>
-                  <Button className="w-full bg-gradient-to-r from-violet-600 to-cyan-600 hover:from-violet-700 hover:to-cyan-700 text-white border-0">
-                    Generate Tokens
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+            <TicketPurchaseCard event={event} currentUser={{ id: user.id }} isOwner={event.creator_id === user.id} />
 
             <Card className="bg-slate-900/50 border-slate-800">
               <CardHeader>

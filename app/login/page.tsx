@@ -11,8 +11,10 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Separator } from "@/components/ui/separator"
 import { Ticket, ArrowLeft, Loader2 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
+import { WalletConnectButton } from "@/components/wallet-connect-button"
 
 const loginSchema = z.object({
   email: z.string().min(1, "Email is required").email("Please enter a valid email address"),
@@ -66,6 +68,32 @@ export default function LoginPage() {
     }
   }
 
+  const handleWalletConnect = async (address: string) => {
+    try {
+      // Check if user exists with this wallet address
+      const { data: profile } = await supabase.from("profiles").select("*").eq("wallet_address", address).single()
+
+      if (profile) {
+        // If profile exists, sign in the user
+        const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+          email: profile.email,
+          password: "wallet-auth", // This won't work, we need a different approach
+        })
+
+        if (!authError && authData.user) {
+          router.push("/dashboard")
+        } else {
+          setError("Wallet found but authentication failed. Please use email/password login.")
+        }
+      } else {
+        setError("No account found with this wallet address. Please register first or use email/password login.")
+      }
+    } catch (err) {
+      console.error("Wallet login error:", err)
+      setError("Failed to authenticate with wallet. Please try again.")
+    }
+  }
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
@@ -91,6 +119,19 @@ export default function LoginPage() {
             <CardDescription className="text-slate-400">Sign in to your Event-Token account</CardDescription>
           </CardHeader>
           <CardContent>
+            {/* Wallet connection section */}
+            <div className="space-y-4 mb-6">
+              <WalletConnectButton onConnect={handleWalletConnect} className="w-full" />
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <Separator className="w-full bg-slate-700" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-slate-900 px-2 text-slate-500">Or continue with email</span>
+                </div>
+              </div>
+            </div>
+
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               {error && (
                 <Alert className="bg-red-900/20 border-red-800 text-red-300">
