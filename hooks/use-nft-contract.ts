@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { ethers } from 'ethers';
 import { useWallet } from './use-wallet';
 import { 
@@ -179,6 +179,76 @@ export function useNFTContract(isTestnet = true) {
     }
   };
 
+  // Get ALL tickets for a user across all events
+  const getAllTicketsByOwner = async (owner: string): Promise<Array<{
+    tokenId: string;
+    eventId: string;
+    isUsed: boolean;
+    mintedAt: string;
+    eventTitle: string;
+  }>> => {
+    const provider = getProvider();
+    if (!provider || !owner) return [];
+
+    // In development mode without deployed contract, return mock data
+    if (!contractDeployed) {
+      console.log('Using mock tickets for all events');
+      return [
+        {
+          tokenId: "1",
+          eventId: "1",
+          isUsed: false,
+          mintedAt: Date.now().toString(),
+          eventTitle: "Mock Event 1"
+        },
+        {
+          tokenId: "2",
+          eventId: "2", 
+          isUsed: true,
+          mintedAt: (Date.now() - 86400000).toString(), // Yesterday
+          eventTitle: "Mock Event 2"
+        }
+      ];
+    }
+    
+    try {
+      const contract = getEventTicketNFTContract(provider, isTestnet);
+      console.log("Getting all tickets for user:", owner);
+      
+      // Get total supply - we'll iterate through all tokens
+      // Note: This is not the most efficient way, but it works for the hackathon
+      // In production, you'd want events or a mapping
+      const userTickets = [];
+      
+      // Start from token ID 1 and check up to a reasonable limit
+      // In a real implementation, you'd track the next token ID
+      for (let tokenId = 1; tokenId <= 10000; tokenId++) {
+        try {
+          const tokenOwner = await contract.ownerOf(BigInt(tokenId));
+          if (tokenOwner.toLowerCase() === owner.toLowerCase()) {
+            const ticketInfo = await contract.tickets(BigInt(tokenId));
+            userTickets.push({
+              tokenId: tokenId.toString(),
+              eventId: ticketInfo.eventId.toString(),
+              isUsed: ticketInfo.isUsed,
+              mintedAt: ticketInfo.mintedAt.toString(),
+              eventTitle: ticketInfo.eventTitle
+            });
+          }
+        } catch (error) {
+          // Token doesn't exist or other error, stop searching
+          break;
+        }
+      }
+
+      console.log("Found user tickets:", userTickets);
+      return userTickets;
+    } catch (error) {
+      console.error('Error getting all tickets by owner:', error);
+      return [];
+    }
+  };
+
   const getTicketInfo = async (tokenId: bigint): Promise<TicketInfo | null> => {
     const provider = getProvider();
     if (!provider || !contractDeployed) return null;
@@ -241,6 +311,80 @@ export function useNFTContract(isTestnet = true) {
     }
   };
 
+  // Transfer NFT ticket to another address
+  const transferTicket = useCallback(async (
+    fromAddress: string,
+    toAddress: string,
+    tokenId: string
+  ): Promise<{ success: boolean; txHash?: string; error?: string }> => {
+    const provider = getProvider();
+    if (!provider || !isConnected) {
+      return { success: false, error: 'Wallet not connected' };
+    }
+
+    // Check if user's wallet is on the correct network
+    if (chainId !== (isTestnet ? 4202 : 1135)) {
+      return { 
+        success: false, 
+        error: `Please switch to ${isTestnet ? 'Lisk Sepolia Testnet' : 'Lisk Mainnet'}` 
+      };
+    }
+
+    // Validate addresses
+    if (!/^0x[a-fA-F0-9]{40}$/.test(toAddress)) {
+      return { success: false, error: 'Invalid recipient address' };
+    }
+
+    if (fromAddress.toLowerCase() === toAddress.toLowerCase()) {
+      return { success: false, error: 'Cannot transfer to yourself' };
+    }
+
+    setLoading(true);
+    try {
+      if (contractDeployed) {
+        // Real contract interaction
+        const contract = await getEventTicketNFTContractWithSigner(provider, isTestnet);
+        
+        // Use safeTransferFrom to transfer the NFT
+        const tx = await contract.safeTransferFrom(
+          fromAddress,
+          toAddress,
+          BigInt(tokenId)
+        );
+        
+        const receipt = await tx.wait();
+        console.log('NFT transfer successful:', receipt.hash);
+        
+        return { 
+          success: true, 
+          txHash: receipt.hash 
+        };
+      } else {
+        // Mock implementation for development
+        console.log('🔄 Mock: Transferring NFT');
+        console.log('📤 From:', fromAddress);
+        console.log('📥 To:', toAddress);
+        console.log('🎫 Token ID:', tokenId);
+        
+        // Simulate async operation
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        return { 
+          success: true, 
+          txHash: `0x${Math.random().toString(16).slice(2)}`
+        };
+      }
+    } catch (error: any) {
+      console.error('Error transferring NFT:', error);
+      return { 
+        success: false, 
+        error: error.message || 'Failed to transfer NFT' 
+      };
+    } finally {
+      setLoading(false);
+    }
+  }, [isConnected, chainId, contractDeployed, isTestnet]);
+
   return {
     // State
     ticketPrice,
@@ -250,7 +394,9 @@ export function useNFTContract(isTestnet = true) {
     
     // Actions
     mintTicket,
+    transferTicket,
     getTicketsByOwnerForEvent,
+    getAllTicketsByOwner,
     getTicketInfo,
     getTicketsForEvent,
     getTicketCount,
