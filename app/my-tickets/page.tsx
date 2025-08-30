@@ -21,7 +21,15 @@ export default async function MyTicketsPage() {
   }
 
   // Get user's tickets
-  const tickets = await getUserTickets(user.id)
+  let tickets = []
+  let nftTablesExist = true
+
+  try {
+    tickets = await getUserTickets(user.id)
+  } catch (error) {
+    console.error("Error fetching tickets:", error)
+    nftTablesExist = false
+  }
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-50">
@@ -68,7 +76,25 @@ export default async function MyTicketsPage() {
         </div>
 
         {/* Tickets Grid */}
-        <MyTicketsGrid tickets={tickets} currentUserId={user.id} />
+        {!nftTablesExist ? (
+          <div className="bg-slate-800 border border-slate-700 rounded-lg p-6 text-center">
+            <Ticket className="w-12 h-12 text-slate-400 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-slate-200 mb-2">NFT Functionality Not Set Up</h3>
+            <p className="text-slate-400 mb-4">
+              The NFT ticket system needs to be initialized. Please run the database migration script to enable NFT
+              functionality.
+            </p>
+            <Button
+              asChild
+              variant="outline"
+              className="border-slate-600 text-slate-300 hover:text-white bg-transparent"
+            >
+              <Link href="/dashboard">Return to Dashboard</Link>
+            </Button>
+          </div>
+        ) : (
+          <MyTicketsGrid tickets={tickets} currentUserId={user.id} />
+        )}
       </main>
     </div>
   )

@@ -2,7 +2,7 @@ import { createServerClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Ticket, Plus, Calendar, Users } from "lucide-react"
+import { Ticket, Plus, Calendar, Users, Home } from "lucide-react"
 import Link from "next/link"
 import { WalletDashboardSection } from "@/components/wallet-dashboard-section"
 
@@ -47,6 +47,12 @@ export default async function DashboardPage() {
               </span>
             </div>
             <div className="flex items-center gap-4">
+              <Button variant="ghost" asChild className="text-slate-300 hover:text-white">
+                <Link href="/" className="flex items-center gap-2">
+                  <Home className="w-4 h-4" />
+                  Home
+                </Link>
+              </Button>
               <span className="text-slate-300">
                 Welcome, {profile?.display_name || profile?.email?.split("@")[0] || profile?.alias || "User"}
               </span>

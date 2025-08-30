@@ -98,40 +98,70 @@ export async function purchaseTicket(data: PurchaseTicketData) {
 export async function getUserTickets(userId: string) {
   const supabase = await createServerClient()
 
-  const { data: tickets, error } = await supabase
-    .from("nft_tickets")
-    .select(`
-      *,
-      events (
-        id,
-        title,
-        description,
-        date,
-        location
-      )
-    `)
-    .eq("owner_user_id", userId)
-    .order("created_at", { ascending: false })
+  try {
+    const { data: tickets, error } = await supabase
+      .from("nft_tickets")
+      .select(`
+        *,
+        events (
+          id,
+          title,
+          description,
+          date,
+          location
+        )
+      `)
+      .eq("owner_user_id", userId)
+      .order("created_at", { ascending: false })
 
-  if (error) {
-    throw new Error(`Failed to fetch user tickets: ${error.message}`)
+    if (error) {
+      if (error.message.includes("Could not find the table") || error.message.includes("schema cache")) {
+        console.warn("NFT tables not found - NFT functionality not yet set up")
+        return []
+      }
+      throw new Error(`Failed to fetch user tickets: ${error.message}`)
+    }
+
+    return tickets || []
+  } catch (error) {
+    if (
+      error instanceof Error &&
+      (error.message.includes("Could not find the table") || error.message.includes("schema cache"))
+    ) {
+      console.warn("NFT tables not found - NFT functionality not yet set up")
+      return []
+    }
+    throw error
   }
-
-  return tickets || []
 }
 
 export async function getEventTickets(eventId: string) {
   const supabase = await createServerClient()
 
-  const { data: tickets, error } = await supabase
-    .from("nft_tickets")
-    .select("*")
-    .eq("event_id", eventId)
-    .order("token_id", { ascending: true })
+  try {
+    const { data: tickets, error } = await supabase
+      .from("nft_tickets")
+      .select("*")
+      .eq("event_id", eventId)
+      .order("token_id", { ascending: true })
 
-  if (error) {
-    throw new Error(`Failed to fetch event tickets: ${error.message}`)
+    if (error) {
+      if (error.message.includes("Could not find the table") || error.message.includes("schema cache")) {
+        console.warn("NFT tables not found - NFT functionality not yet set up")
+        return []
+      }
+      throw new Error(`Failed to fetch event tickets: ${error.message}`)
+    }
+
+    return tickets || []
+  } catch (error) {
+    if (
+      error instanceof Error &&
+      (error.message.includes("Could not find the table") || error.message.includes("schema cache"))
+    ) {
+      console.warn("NFT tables not found - NFT functionality not yet set up")
+      return []
+    }
+    throw error
   }
-
-  return tickets || []
 }

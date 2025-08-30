@@ -97,4 +97,3 @@ CREATE TRIGGER update_nft_tickets_updated_at BEFORE UPDATE ON nft_tickets
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_marketplace_listings_updated_at BEFORE UPDATE ON marketplace_listings 
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-</sql>

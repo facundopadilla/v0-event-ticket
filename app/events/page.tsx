@@ -8,23 +8,44 @@ import { Search, Calendar, MapPin } from "lucide-react"
 export const dynamic = "force-dynamic"
 
 async function getPublicEvents() {
-  const supabase = createServerClient()
+  const supabase = await createServerClient()
 
-  const { data: events, error } = await supabase
+  const { data: events, error: eventsError } = await supabase
     .from("events")
-    .select(`
-      *,
-      profiles!events_creator_id_fkey(display_name, alias)
-    `)
+    .select("*")
     .gte("date", new Date().toISOString())
     .order("date", { ascending: true })
 
-  if (error) {
-    console.error("Error fetching events:", error)
+  if (eventsError) {
+    console.error("Error fetching events:", eventsError)
     return []
   }
 
-  return events || []
+  if (!events || events.length === 0) {
+    return []
+  }
+
+  // Get unique creator IDs
+  const creatorIds = [...new Set(events.map((event) => event.creator_id))]
+
+  // Fetch profiles for all creators
+  const { data: profiles, error: profilesError } = await supabase
+    .from("profiles")
+    .select("id, display_name, alias")
+    .in("id", creatorIds)
+
+  if (profilesError) {
+    console.error("Error fetching profiles:", profilesError)
+    // Continue without profile data rather than failing completely
+  }
+
+  // Combine events with profile data
+  const eventsWithProfiles = events.map((event) => ({
+    ...event,
+    profiles: profiles?.find((profile) => profile.id === event.creator_id) || null,
+  }))
+
+  return eventsWithProfiles
 }
 
 export default async function EventsPage() {

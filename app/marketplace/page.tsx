@@ -33,47 +33,116 @@ export default async function MarketplacePage({ searchParams }: MarketplacePageP
     redirect("/login")
   }
 
-  // Get active marketplace listings with event details
-  let query = supabase
-    .from("marketplace_listings")
-    .select(`
-      *,
-      nft_tickets (
+  let activeListings = []
+  let hasNFTTables = true
+
+  try {
+    // Get active marketplace listings with event details
+    let query = supabase
+      .from("marketplace_listings")
+      .select(`
         *,
-        events (
-          id,
-          title,
-          description,
-          date,
-          location,
-          max_attendees
+        nft_tickets (
+          *,
+          events (
+            id,
+            title,
+            description,
+            date,
+            location,
+            max_attendees
+          )
         )
-      )
-    `)
-    .eq("is_active", true)
-    .order("created_at", { ascending: false })
+      `)
+      .eq("is_active", true)
+      .order("created_at", { ascending: false })
 
-  // Apply search filter
-  if (searchParams.search) {
-    // Note: This is a simplified search. In production, you'd want full-text search
-    query = query.ilike("nft_tickets.events.title", `%${searchParams.search}%`)
+    // Apply search filter
+    if (searchParams.search) {
+      // Note: This is a simplified search. In production, you'd want full-text search
+      query = query.ilike("nft_tickets.events.title", `%${searchParams.search}%`)
+    }
+
+    // Apply price filters
+    if (searchParams.priceMin) {
+      query = query.gte("price_eth", Number.parseFloat(searchParams.priceMin))
+    }
+    if (searchParams.priceMax) {
+      query = query.lte("price_eth", Number.parseFloat(searchParams.priceMax))
+    }
+
+    const { data: listings, error: listingsError } = await query
+
+    if (listingsError) {
+      // Check if error is due to missing table
+      if (
+        listingsError.message?.includes("Could not find the table") ||
+        listingsError.message?.includes("schema cache")
+      ) {
+        hasNFTTables = false
+      } else {
+        console.error("Failed to fetch marketplace listings:", listingsError)
+      }
+    } else {
+      activeListings = listings || []
+    }
+  } catch (error) {
+    console.error("Error fetching marketplace listings:", error)
+    hasNFTTables = false
   }
 
-  // Apply price filters
-  if (searchParams.priceMin) {
-    query = query.gte("price_eth", Number.parseFloat(searchParams.priceMin))
-  }
-  if (searchParams.priceMax) {
-    query = query.lte("price_eth", Number.parseFloat(searchParams.priceMax))
-  }
+  if (!hasNFTTables) {
+    return (
+      <div className="min-h-screen bg-slate-950 text-slate-50">
+        {/* Header */}
+        <header className="border-b border-slate-800 bg-slate-950/80 backdrop-blur-sm">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center justify-between h-16">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 bg-gradient-to-br from-violet-500 to-cyan-500 rounded-lg flex items-center justify-center">
+                  <Store className="w-5 h-5 text-white" />
+                </div>
+                <span className="text-xl font-bold bg-gradient-to-r from-violet-400 to-cyan-400 bg-clip-text text-transparent">
+                  NFT Marketplace
+                </span>
+              </div>
+              <div className="flex items-center gap-4">
+                <Button asChild variant="ghost" className="text-slate-300 hover:text-white">
+                  <Link href="/dashboard">
+                    <ArrowLeft className="w-4 h-4 mr-2" />
+                    Dashboard
+                  </Link>
+                </Button>
+              </div>
+            </div>
+          </div>
+        </header>
 
-  const { data: listings, error: listingsError } = await query
-
-  if (listingsError) {
-    console.error("Failed to fetch marketplace listings:", listingsError)
+        {/* Setup Message */}
+        <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+          <div className="text-center">
+            <div className="w-16 h-16 bg-gradient-to-br from-violet-500 to-cyan-500 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Store className="w-8 h-8 text-white" />
+            </div>
+            <h1 className="text-3xl font-bold text-slate-100 mb-4">NFT Marketplace Setup Required</h1>
+            <p className="text-slate-400 mb-8 max-w-2xl mx-auto">
+              The NFT marketplace functionality requires additional database setup. Please run the NFT schema script to
+              enable ticket trading features.
+            </p>
+            <div className="bg-slate-900/50 border border-slate-800 rounded-lg p-6 max-w-2xl mx-auto">
+              <h3 className="text-lg font-semibold text-slate-200 mb-3">Required Setup:</h3>
+              <p className="text-slate-400 text-sm mb-4">
+                Run the following script to create the necessary NFT tables:
+              </p>
+              <code className="bg-slate-800 text-cyan-400 px-3 py-2 rounded text-sm block">
+                scripts/010_create_nft_schema.sql
+              </code>
+            </div>
+          </div>
+        </main>
+      </div>
+    )
   }
-
-  const activeListings = listings || []
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-50">
