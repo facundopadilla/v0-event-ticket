@@ -1,217 +1,341 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
-import { Ticket, Wallet, Loader2, CheckCircle, AlertCircle } from "lucide-react"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { 
+  Ticket, 
+  Wallet,
+  ShoppingCart,
+  Loader2,
+  CheckCircle,
+  AlertCircle,
+  DollarSign
+} from "lucide-react"
 import { useWallet } from "@/hooks/use-wallet"
 import { useNFTContract } from "@/hooks/use-nft-contract"
-import { purchaseTicket } from "@/lib/actions/ticket-purchase"
+import { useToast } from "@/hooks/use-toast"
 
 interface TicketPurchaseCardProps {
-  event: {
-    id: string
-    title: string
-    description: string
-    date: string
-    location: string
-    max_attendees: number
-    creator_id: string
-  }
-  currentUser: {
-    id: string
-  }
-  isOwner: boolean
+  eventId: string
+  eventTitle: string
+  eventDate: string
+  ticketPrice: number
+  availableTickets: number
+  maxTicketsPerWallet: number
 }
 
-export function TicketPurchaseCard({ event, currentUser, isOwner }: TicketPurchaseCardProps) {
-  const [quantity, setQuantity] = useState(1)
+function formatDate(dateString: string): string {
+  return new Date(dateString).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  })
+}
+
+export function TicketPurchaseCard({
+  eventId,
+  eventTitle,
+  eventDate,
+  ticketPrice,
+  availableTickets,
+  maxTicketsPerWallet
+}: TicketPurchaseCardProps) {
+  // Ensure we have valid numbers to prevent NaN
+  const safeAvailableTickets = typeof availableTickets === 'number' && !isNaN(availableTickets) ? availableTickets : 100
+  const safeMaxTicketsPerWallet = typeof maxTicketsPerWallet === 'number' && !isNaN(maxTicketsPerWallet) ? maxTicketsPerWallet : 4
+  const safeTicketPrice = typeof ticketPrice === 'number' && !isNaN(ticketPrice) ? ticketPrice : 0.01
+  
+  const [ticketQuantity, setTicketQuantity] = useState(1)
   const [isLoading, setIsLoading] = useState(false)
-  const [purchaseStatus, setPurchaseStatus] = useState<"idle" | "success" | "error">("idle")
-  const [errorMessage, setErrorMessage] = useState("")
+  
+  const { address, connectWallet, switchToLiskNetwork } = useWallet()
+  const { mintTicket, getTicketsByOwnerForEvent } = useNFTContract()
+  const { toast } = useToast()
 
-  const { account, isConnected, connectWallet } = useWallet()
-  const { mintTicket, isContractReady } = useNFTContract()
+  // Reset ticketQuantity if it becomes NaN
+  useEffect(() => {
+    if (isNaN(ticketQuantity)) {
+      setTicketQuantity(1)
+    }
+  }, [ticketQuantity])
 
-  const ticketPrice = 0.01 // ETH per ticket
-  const totalPrice = ticketPrice * quantity
+  const totalPrice = safeTicketPrice * (isNaN(ticketQuantity) ? 1 : ticketQuantity)
 
   const handlePurchase = async () => {
-    if (!isConnected || !account) {
-      await connectWallet()
+    if (!address) {
+      toast({
+        title: "Wallet Required",
+        description: "Please connect your wallet to purchase tickets",
+        variant: "destructive"
+      })
       return
     }
 
-    if (!isContractReady) {
-      setErrorMessage("Smart contract not ready. Please try again.")
-      setPurchaseStatus("error")
+    if (safeAvailableTickets <= 0) {
+      toast({
+        title: "No Tickets Available",
+        description: "This event is sold out",
+        variant: "destructive"
+      })
       return
     }
 
     setIsLoading(true)
-    setPurchaseStatus("idle")
-    setErrorMessage("")
-
     try {
-      // Create metadata for the NFT
-      const metadata = {
-        name: `${event.title} - Ticket`,
-        description: `Event ticket for ${event.title}. ${event.description}`,
-        image: `https://via.placeholder.com/400x600/6366f1/ffffff?text=${encodeURIComponent(event.title)}`,
-        attributes: [
-          { trait_type: "Event", value: event.title },
-          { trait_type: "Date", value: new Date(event.date).toLocaleDateString() },
-          { trait_type: "Location", value: event.location },
-          { trait_type: "Event ID", value: event.id },
-        ],
-        eventId: event.id,
+      // Check current user ticket count
+      const userTickets = await getTicketsByOwnerForEvent(address, Number(eventId))
+      const currentTickets = userTickets.length
+      
+      if (currentTickets + ticketQuantity > maxTicketsPerWallet) {
+        toast({
+          title: "Ticket Limit Exceeded",
+          description: `You can only purchase up to ${maxTicketsPerWallet} tickets for this event`,
+          variant: "destructive"
+        })
+        return
       }
 
-      // Upload metadata to IPFS (simplified - in production use proper IPFS service)
-      const metadataURI = `data:application/json;base64,${btoa(JSON.stringify(metadata))}`
-
-      // Mint NFT tickets
-      const mintedTokens = []
-      for (let i = 0; i < quantity; i++) {
-        const tokenId = await mintTicket(account, event.id, metadataURI)
-        if (tokenId) {
-          mintedTokens.push(tokenId)
+      // Purchase tickets one by one (since mintTicket handles single tickets)
+      for (let i = 0; i < ticketQuantity; i++) {
+        const result = await mintTicket(
+          Number(eventId), 
+          address, 
+          eventTitle, 
+          `ipfs://ticket-metadata-${eventId}-${Date.now()}-${i}`
+        )
+        
+        if (!result.success) {
+          // Check if it's a network error and try to switch
+          if (result.error?.includes("Please switch to Lisk Sepolia Testnet")) {
+            toast({
+              title: "Switching Network",
+              description: "Please approve the network switch to Lisk Sepolia Testnet",
+            })
+            
+            const switchResult = await switchToLiskNetwork(true)
+            if (switchResult.success) {
+              toast({
+                title: "Network Switched",
+                description: "Successfully switched to Lisk Sepolia Testnet. Please try purchasing again.",
+              })
+              setIsLoading(false)
+              return
+            } else {
+              throw new Error(switchResult.error || "Failed to switch network")
+            }
+          }
+          
+          throw new Error(result.error || "Minting failed")
         }
       }
 
-      if (mintedTokens.length === 0) {
-        throw new Error("Failed to mint any tickets")
-      }
-
-      // Save purchase to database
-      await purchaseTicket({
-        eventId: event.id,
-        buyerWalletAddress: account,
-        buyerUserId: currentUser.id,
-        quantity,
-        pricePerTicket: ticketPrice,
-        totalPrice,
-        tokenIds: mintedTokens,
-        contractAddress: "0x0000000000000000000000000000000000000000", // Replace with actual contract address
+      toast({
+        title: "Tickets Purchased! 🎫",
+        description: `Successfully purchased ${ticketQuantity} ticket(s) for ${eventTitle}`,
       })
-
-      setPurchaseStatus("success")
-    } catch (error) {
-      console.error("Purchase failed:", error)
-      setErrorMessage(error instanceof Error ? error.message : "Purchase failed")
-      setPurchaseStatus("error")
+      
+      // Reset quantity
+      setTicketQuantity(1)
+    } catch (error: any) {
+      console.error("Error purchasing tickets:", error)
+      
+      // Special handling for network errors
+      if (error.message?.includes("Please switch to Lisk Sepolia Testnet")) {
+        toast({
+          title: "Wrong Network",
+          description: "Please switch to Lisk Sepolia Testnet to purchase tickets",
+          variant: "destructive"
+        })
+      } else {
+        toast({
+          title: "Purchase Failed",
+          description: error.message || "Failed to purchase tickets. Please try again.",
+          variant: "destructive"
+        })
+      }
     } finally {
       setIsLoading(false)
     }
   }
 
-  if (isOwner) {
-    return (
-      <Card className="bg-slate-900/50 border-slate-800">
-        <CardHeader>
-          <CardTitle className="text-slate-100 flex items-center gap-2">
-            <Ticket className="w-5 h-5" />
-            Event Owner
-          </CardTitle>
-          <CardDescription className="text-slate-400">You are the owner of this event</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-4">
-            <Badge className="bg-violet-600 hover:bg-violet-700">Owner Access</Badge>
-            <p className="text-slate-400 mt-2 text-sm">As the event owner, you have full access to this event.</p>
-          </div>
-        </CardContent>
-      </Card>
-    )
+  const isEventPast = new Date(eventDate) < new Date()
+  
+  // Calculate the actual maximum we can purchase
+  const effectiveMaxTickets = Math.min(safeMaxTicketsPerWallet, safeAvailableTickets)
+  
+  const isQuantityValid = ticketQuantity > 0 && ticketQuantity <= effectiveMaxTickets
+
+  // Functions for incrementing/decrementing with explicit bounds checking
+  const incrementTickets = () => {
+    const newQuantity = ticketQuantity + 1
+    if (newQuantity <= effectiveMaxTickets) {
+      setTicketQuantity(newQuantity)
+    }
+  }
+
+  const decrementTickets = () => {
+    const newQuantity = ticketQuantity - 1
+    if (newQuantity >= 1) {
+      setTicketQuantity(newQuantity)
+    }
   }
 
   return (
-    <Card className="bg-slate-900/50 border-slate-800">
+    <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl sticky top-8">
       <CardHeader>
-        <CardTitle className="text-slate-100 flex items-center gap-2">
+        <CardTitle className="text-lg flex items-center space-x-2">
           <Ticket className="w-5 h-5" />
-          Purchase NFT Tickets
+          <span>Purchase Tickets</span>
         </CardTitle>
-        <CardDescription className="text-slate-400">Buy NFT tickets for this event</CardDescription>
+        <CardDescription>
+          {isEventPast ? "Event has ended" : `For ${formatDate(eventDate)}`}
+        </CardDescription>
       </CardHeader>
+
       <CardContent className="space-y-4">
-        {purchaseStatus === "success" && (
-          <div className="flex items-center gap-2 p-3 bg-green-900/20 border border-green-800 rounded-lg">
-            <CheckCircle className="w-5 h-5 text-green-400" />
-            <span className="text-green-400">Tickets purchased successfully!</span>
-          </div>
-        )}
-
-        {purchaseStatus === "error" && (
-          <div className="flex items-center gap-2 p-3 bg-red-900/20 border border-red-800 rounded-lg">
-            <AlertCircle className="w-5 h-5 text-red-400" />
-            <span className="text-red-400">{errorMessage}</span>
-          </div>
-        )}
-
-        <div className="space-y-2">
-          <Label htmlFor="quantity" className="text-slate-200">
-            Number of Tickets
-          </Label>
-          <Input
-            id="quantity"
-            type="number"
-            min="1"
-            max="10"
-            value={quantity}
-            onChange={(e) => setQuantity(Math.max(1, Math.min(10, Number.parseInt(e.target.value) || 1)))}
-            className="bg-slate-800 border-slate-700 text-slate-100"
-            disabled={isLoading}
-          />
-        </div>
-
-        <div className="space-y-2">
-          <div className="flex justify-between text-sm">
-            <span className="text-slate-400">Price per ticket:</span>
-            <span className="text-slate-200">{ticketPrice} ETH</span>
-          </div>
-          <div className="flex justify-between font-semibold">
-            <span className="text-slate-200">Total:</span>
-            <span className="text-slate-100">{totalPrice.toFixed(4)} ETH</span>
-          </div>
-        </div>
-
-        {!isConnected ? (
-          <Button
-            onClick={connectWallet}
-            className="w-full bg-gradient-to-r from-violet-600 to-cyan-600 hover:from-violet-700 hover:to-cyan-700 text-white border-0"
-          >
-            <Wallet className="w-4 h-4 mr-2" />
-            Connect Wallet to Purchase
-          </Button>
+        {isEventPast ? (
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              This event has already taken place. Tickets are no longer available.
+            </AlertDescription>
+          </Alert>
+        ) : safeAvailableTickets <= 0 ? (
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              This event is sold out. No tickets are currently available.
+            </AlertDescription>
+          </Alert>
         ) : (
-          <Button
-            onClick={handlePurchase}
-            disabled={isLoading || !isContractReady}
-            className="w-full bg-gradient-to-r from-violet-600 to-cyan-600 hover:from-violet-700 hover:to-cyan-700 text-white border-0"
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Purchasing...
-              </>
-            ) : (
-              <>
-                <Ticket className="w-4 h-4 mr-2" />
-                Purchase {quantity} Ticket{quantity > 1 ? "s" : ""}
-              </>
-            )}
-          </Button>
-        )}
+          <>
+            {/* Ticket Info */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-600">Price per ticket</span>
+                <span className="font-medium">
+                  {safeTicketPrice === 0 ? 'Free' : `${safeTicketPrice} ETH`}
+                </span>
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-600">Available</span>
+                <Badge variant="secondary">{safeAvailableTickets} tickets</Badge>
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-600">Max per wallet</span>
+                <span className="text-sm">{safeMaxTicketsPerWallet} tickets</span>
+              </div>
+            </div>
 
-        <div className="text-xs text-slate-500 space-y-1">
-          <p>• NFT tickets are stored on the blockchain</p>
-          <p>• You can resell tickets on the marketplace</p>
-          <p>• Tickets are required for event entry</p>
-        </div>
+            {/* Quantity Selector */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Quantity</label>
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={decrementTickets}
+                  disabled={ticketQuantity <= 1}
+                >
+                  -
+                </Button>
+                <span className="px-4 py-2 border rounded-md text-center min-w-[3rem]">
+                  {isNaN(ticketQuantity) ? 1 : ticketQuantity}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={incrementTickets}
+                  disabled={ticketQuantity >= effectiveMaxTickets}
+                >
+                  +
+                </Button>
+              </div>
+            </div>
+
+            {/* Total Price */}
+            {safeTicketPrice > 0 && (
+              <div className="bg-gray-50 p-3 rounded-lg">
+                <div className="flex items-center justify-between">
+                  <span className="font-medium">Total</span>
+                  <div className="flex items-center space-x-1">
+                    <DollarSign className="w-4 h-4" />
+                    <span className="text-lg font-bold">{totalPrice} ETH</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Purchase Button */}
+            {!address ? (
+              <Button 
+                className="w-full" 
+                onClick={connectWallet}
+                size="lg"
+              >
+                <Wallet className="w-4 h-4 mr-2" />
+                Connect Wallet to Purchase
+              </Button>
+            ) : (
+              <div className="space-y-2">
+                <Button 
+                  className="w-full" 
+                  onClick={handlePurchase}
+                  disabled={isLoading || !isQuantityValid}
+                  size="lg"
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      <ShoppingCart className="w-4 h-4 mr-2" />
+                      {safeTicketPrice === 0 ? 'Get Free Tickets' : `Purchase for ${totalPrice} ETH`}
+                    </>
+                  )}
+                </Button>
+                
+                {/* Network Switch Button */}
+                <Button 
+                  className="w-full" 
+                  onClick={async () => {
+                    const result = await switchToLiskNetwork(true)
+                    if (result.success) {
+                      toast({
+                        title: "Network Switched",
+                        description: "Successfully switched to Lisk Sepolia Testnet",
+                      })
+                    } else {
+                      toast({
+                        title: "Network Switch Failed",
+                        description: result.error || "Failed to switch network",
+                        variant: "destructive"
+                      })
+                    }
+                  }}
+                  variant="outline"
+                  size="sm"
+                >
+                  Switch to Lisk Testnet
+                </Button>
+              </div>
+            )}
+
+            {/* Wallet Info */}
+            {address && (
+              <div className="text-xs text-gray-500 text-center">
+                Connected: {address.slice(0, 6)}...{address.slice(-4)}
+              </div>
+            )}
+          </>
+        )}
       </CardContent>
     </Card>
   )

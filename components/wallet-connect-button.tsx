@@ -1,10 +1,11 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Wallet, Loader2, ExternalLink } from "lucide-react"
+import { Wallet, Loader2, ExternalLink, RefreshCw } from "lucide-react"
 import { useWallet } from "@/hooks/use-wallet"
+import { resetWalletState } from "@/hooks/use-wallet"
 
 interface WalletConnectButtonProps {
   onConnect?: (address: string) => void
@@ -12,6 +13,8 @@ interface WalletConnectButtonProps {
   variant?: "default" | "outline" | "ghost"
   size?: "default" | "sm" | "lg"
   className?: string
+  onForceDisconnectRef?: (forceDisconnect: () => void) => void
+  showClearButton?: boolean
 }
 
 export function WalletConnectButton({
@@ -20,7 +23,10 @@ export function WalletConnectButton({
   variant = "default",
   size = "default",
   className = "",
+  onForceDisconnectRef,
+  showClearButton = false,
 }: WalletConnectButtonProps) {
+  const [isMounted, setIsMounted] = useState(false)
   const {
     address,
     isConnected,
@@ -28,13 +34,26 @@ export function WalletConnectButton({
     error,
     connectWallet,
     disconnectWallet,
+    forceDisconnectWallet,
     isMetaMaskInstalled,
     formatAddress,
+    debugMetaMask,
   } = useWallet()
 
   const [showError, setShowError] = useState(true)
 
+  useEffect(() => {
+    setIsMounted(true)
+    
+    // Provide force disconnect function to parent if requested
+    if (onForceDisconnectRef) {
+      onForceDisconnectRef(handleForceDisconnect)
+    }
+  }, [onForceDisconnectRef])
+
   const handleConnect = async () => {
+    console.log("[WalletConnect] Attempting to connect...")
+    debugMetaMask() // Run debug before attempting connection
     await connectWallet()
     if (address && onConnect) {
       onConnect(address)
@@ -46,6 +65,46 @@ export function WalletConnectButton({
     if (onDisconnect) {
       onDisconnect()
     }
+  }
+
+  // Force disconnect method for external use
+  const handleForceDisconnect = () => {
+    forceDisconnectWallet()
+    if (onDisconnect) {
+      onDisconnect()
+    }
+  }
+
+  // Clear all wallet state and reset everything
+  const handleClearWalletState = () => {
+    resetWalletState()
+    forceDisconnectWallet()
+    if (onDisconnect) {
+      onDisconnect()
+    }
+    // Force page refresh to ensure clean state
+    window.location.reload()
+  }
+
+  // Prevent hydration mismatch by not rendering wallet-specific content until mounted
+  if (!isMounted) {
+    return (
+      <div className="space-y-3">
+        <Button
+          variant={variant}
+          size={size}
+          disabled
+          className={`${className} ${
+            variant === "default"
+              ? "bg-gradient-to-r from-violet-600 to-cyan-600 text-white border-0"
+              : ""
+          }`}
+        >
+          <Wallet className="mr-2 h-4 w-4" />
+          Connect Wallet
+        </Button>
+      </div>
+    )
   }
 
   if (!isMetaMaskInstalled) {
@@ -104,31 +163,54 @@ export function WalletConnectButton({
           >
             Disconnect
           </Button>
+          {showClearButton && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleClearWalletState}
+              className="text-slate-400 hover:text-slate-300 px-2"
+              title="Clear wallet cache completely"
+            >
+              <RefreshCw className="h-3 w-3" />
+            </Button>
+          )}
         </div>
       ) : (
-        <Button
-          variant={variant}
-          size={size}
-          onClick={handleConnect}
-          disabled={isConnecting}
-          className={`${className} ${
-            variant === "default"
-              ? "bg-gradient-to-r from-violet-600 to-cyan-600 hover:from-violet-700 hover:to-cyan-700 text-white border-0"
-              : ""
-          }`}
-        >
-          {isConnecting ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Connecting...
-            </>
-          ) : (
-            <>
-              <Wallet className="mr-2 h-4 w-4" />
-              Connect Wallet
-            </>
-          )}
-        </Button>
+        <div className="space-y-2">
+          <Button
+            variant={variant}
+            size={size}
+            onClick={handleConnect}
+            disabled={isConnecting}
+            className={`${className} ${
+              variant === "default"
+                ? "bg-gradient-to-r from-violet-600 to-cyan-600 hover:from-violet-700 hover:to-cyan-700 text-white border-0"
+                : ""
+            }`}
+          >
+            {isConnecting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Connecting...
+              </>
+            ) : (
+              <>
+                <Wallet className="mr-2 h-4 w-4" />
+                Connect Wallet
+              </>
+            )}
+          </Button>
+          
+          {/* Debug button - remove this after fixing the issue */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={debugMetaMask}
+            className="text-xs text-slate-500 hover:text-slate-400"
+          >
+            Debug MetaMask
+          </Button>
+        </div>
       )}
     </div>
   )
