@@ -37,6 +37,7 @@ export function WalletConnectButton({
     forceDisconnectWallet,
     isMetaMaskInstalled,
     formatAddress,
+    debugMetaMask,
   } = useWallet()
 
   const [showError, setShowError] = useState(true)
@@ -51,6 +52,8 @@ export function WalletConnectButton({
   }, [onForceDisconnectRef])
 
   const handleConnect = async () => {
+    console.log("[WalletConnect] Attempting to connect...")
+    debugMetaMask() // Run debug before attempting connection
     await connectWallet()
     if (address && onConnect) {
       onConnect(address)
@@ -173,29 +176,41 @@ export function WalletConnectButton({
           )}
         </div>
       ) : (
-        <Button
-          variant={variant}
-          size={size}
-          onClick={handleConnect}
-          disabled={isConnecting}
-          className={`${className} ${
-            variant === "default"
-              ? "bg-gradient-to-r from-violet-600 to-cyan-600 hover:from-violet-700 hover:to-cyan-700 text-white border-0"
-              : ""
-          }`}
-        >
-          {isConnecting ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Connecting...
-            </>
-          ) : (
-            <>
-              <Wallet className="mr-2 h-4 w-4" />
-              Connect Wallet
-            </>
-          )}
-        </Button>
+        <div className="space-y-2">
+          <Button
+            variant={variant}
+            size={size}
+            onClick={handleConnect}
+            disabled={isConnecting}
+            className={`${className} ${
+              variant === "default"
+                ? "bg-gradient-to-r from-violet-600 to-cyan-600 hover:from-violet-700 hover:to-cyan-700 text-white border-0"
+                : ""
+            }`}
+          >
+            {isConnecting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Connecting...
+              </>
+            ) : (
+              <>
+                <Wallet className="mr-2 h-4 w-4" />
+                Connect Wallet
+              </>
+            )}
+          </Button>
+          
+          {/* Debug button - remove this after fixing the issue */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={debugMetaMask}
+            className="text-xs text-slate-500 hover:text-slate-400"
+          >
+            Debug MetaMask
+          </Button>
+        </div>
       )}
     </div>
   )

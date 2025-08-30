@@ -7,10 +7,7 @@ export async function getPublicEvents() {
 
   const { data: events, error } = await supabase
     .from("events")
-    .select(`
-      *,
-      profiles!events_creator_id_fkey(display_name, alias)
-    `)
+    .select("*")
     .gte("date", new Date().toISOString())
     .order("date", { ascending: true })
 
@@ -20,6 +17,23 @@ export async function getPublicEvents() {
   }
 
   return events || []
+}
+
+export async function getEventById(id: string) {
+  const supabase = await createServerClient()
+
+  const { data: event, error } = await supabase
+    .from("events")
+    .select("*")
+    .eq("id", id)
+    .single()
+
+  if (error) {
+    console.error("Error fetching event:", error)
+    return null
+  }
+
+  return event
 }
 
 export async function searchEvents(query: string) {
