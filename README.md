@@ -2,9 +2,12 @@
 
 > **A decentralized event ticketing platform where tickets are minted as NFTs on Lisk blockchain**
 
-[![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=for-the-badge&logo=vercel)](https://vercel.com)
+[![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=for-the-badge&logo=vercel)](https://v0-event-ticket-git-local-facundos-projects-8969bc26.vercel.app/)
 [![Built on Lisk](https://img.shields.io/badge/Built%20on-Lisk-blue?style=for-the-badge)](https://lisk.com)
 [![Smart Contract](https://img.shields.io/badge/Smart%20Contract-Deployed-green?style=for-the-badge)](https://sepolia-blockscout.lisk.com/address/0xBdD45C68f44Ef4d9db4F5dEa4F6f163dac88ac2f)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Available-brightgreen?style=for-the-badge)](https://v0-event-ticket-git-local-facundos-projects-8969bc26.vercel.app/)
+
+**🚀 [LIVE DEMO](https://v0-event-ticket-git-local-facundos-projects-8969bc26.vercel.app/) | [Smart Contract](https://sepolia-blockscout.lisk.com/address/0xBdD45C68f44Ef4d9db4F5dEa4F6f163dac88ac2f) | [Source Code](https://github.com/facundopadilla/v0-event-ticket)**
 
 ## 🌟 Overview
 
@@ -82,20 +85,28 @@ npm install
 
 ### 3. Environment Configuration
 
-Create a `.env.local` file in the root directory:
+Copy the environment template and configure your values:
+
+```bash
+# Copy the template file
+cp .env.local.example .env.local
+```
+
+Then edit `.env.local` with your actual values:
 
 ```env
-# Supabase Configuration
+# Supabase Configuration (required)
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 
-# Optional: Additional configurations
+# Optional: Development settings
 NODE_ENV=development
+REPORT_GAS=false
 ```
 
-**Important**: You'll need to set up your own Supabase project and get the credentials.
+**Important**: You'll need to set up your own Supabase project and get the credentials from your [Supabase Dashboard](https://supabase.com/dashboard).
 
-### 4. Database Setup (Supabase) OPTIONAL
+### 4. Database Setup (Supabase)
 
 1. Create a new project on [Supabase](https://supabase.com)
 2. Run the SQL scripts from `scripts/` folder in your Supabase SQL editor:
@@ -217,21 +228,20 @@ node check-balance.js
 ## 🔗 Important Links
 
 ### Application
-
-- **Live Demo**: [Your Vercel URL]
-- **Local Development**: http://localhost:3000
+- **🚀 Live Demo**: [https://v0-event-ticket-git-local-facundos-projects-8969bc26.vercel.app/](https://v0-event-ticket-git-local-facundos-projects-8969bc26.vercel.app/)
+- **💻 Local Development**: http://localhost:3000
+- **📱 Mobile Responsive**: Fully optimized for mobile devices
 
 ### Blockchain
-
-- **Smart Contract**: [0xBdD45C68f44Ef4d9db4F5dEa4F6f163dac88ac2f](https://sepolia-blockscout.lisk.com/address/0xBdD45C68f44Ef4d9db4F5dEa4F6f163dac88ac2f)
-- **Lisk Sepolia Explorer**: https://sepolia-blockscout.lisk.com
-- **Lisk Faucet**: https://faucet.lisk.com
+- **📄 Smart Contract**: [0xBdD45C68f44Ef4d9db4F5dEa4F6f163dac88ac2f](https://sepolia-blockscout.lisk.com/address/0xBdD45C68f44Ef4d9db4F5dEa4F6f163dac88ac2f)
+- **🔍 Lisk Sepolia Explorer**: https://sepolia-blockscout.lisk.com
+- **💧 Lisk Faucet**: https://faucet.lisk.com
+- **🌐 Lisk Official**: https://lisk.com
 
 ### Development
-
-- **Repository**: https://github.com/facundopadilla/v0-event-ticket
-- **Supabase Dashboard**: https://supabase.com/dashboard
-- **Vercel Dashboard**: https://vercel.com/dashboard
+- **📂 Repository**: https://github.com/facundopadilla/v0-event-ticket
+- **🗄️ Supabase Dashboard**: https://supabase.com/dashboard
+- **⚡ Vercel Dashboard**: https://vercel.com/dashboard
 
 ## 🎯 Usage Examples
 
@@ -432,9 +442,28 @@ CREATE TABLE profiles (
 - [x] User authentication and profiles
 - [x] Responsive web interface
 
-## 👥 Team
+## �‍💻 Author
 
-Built with ❤️ for the Lisk ecosystem and hackathon community.
+**Created by Facundo Padilla (f4qn2)**
+
+This project was built entirely by **Facundo Padilla** as a solo developer, showcasing expertise in:
+- Full-stack web development (Next.js, React, TypeScript)
+- Blockchain development (Solidity, Smart Contracts)
+- UI/UX design and modern web technologies
+- Database design and backend architecture
+
+### 🌐 Connect with the Developer
+
+- **🌍 Website**: [facundopadilla.com](https://facundopadilla.com)
+- **🐦 Twitter**: [@facundopadilla_](https://x.com/facundopadilla_)
+- **💼 LinkedIn**: [/in/facundopadilla](https://www.linkedin.com/in/facundopadilla/)
+- **📧 Contact**: Available through any of the above platforms
+
+### 🏆 About This Project
+
+This project represents a comprehensive showcase of modern web development combined with blockchain technology. Every aspect from smart contract development to user interface design was crafted with attention to detail and best practices.
+
+**Built with ❤️ for the Lisk ecosystem and hackathon community.**
 
 ---
 
