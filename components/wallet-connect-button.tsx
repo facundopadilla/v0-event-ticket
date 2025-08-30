@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Wallet, Loader2, ExternalLink } from "lucide-react"
@@ -21,6 +21,7 @@ export function WalletConnectButton({
   size = "default",
   className = "",
 }: WalletConnectButtonProps) {
+  const [isMounted, setIsMounted] = useState(false)
   const {
     address,
     isConnected,
@@ -34,6 +35,10 @@ export function WalletConnectButton({
 
   const [showError, setShowError] = useState(true)
 
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
+
   const handleConnect = async () => {
     await connectWallet()
     if (address && onConnect) {
@@ -46,6 +51,27 @@ export function WalletConnectButton({
     if (onDisconnect) {
       onDisconnect()
     }
+  }
+
+  // Prevent hydration mismatch by not rendering wallet-specific content until mounted
+  if (!isMounted) {
+    return (
+      <div className="space-y-3">
+        <Button
+          variant={variant}
+          size={size}
+          disabled
+          className={`${className} ${
+            variant === "default"
+              ? "bg-gradient-to-r from-violet-600 to-cyan-600 text-white border-0"
+              : ""
+          }`}
+        >
+          <Wallet className="mr-2 h-4 w-4" />
+          Connect Wallet
+        </Button>
+      </div>
+    )
   }
 
   if (!isMetaMaskInstalled) {

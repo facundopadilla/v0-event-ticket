@@ -11,13 +11,13 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Ticket, ArrowLeft, Loader2, CheckCircle } from "lucide-react"
-import { createClient } from "@/lib/supabase/client"
+import { createBrowserClient } from "@/lib/supabase/client"
 
 const forgotPasswordSchema = z.object({
-  alias: z
+  email: z
     .string()
-    .min(1, "Alias is required")
-    .regex(/^[a-zA-Z0-9_-]+$/, "Invalid alias format"),
+    .min(1, "Email is required")
+    .email("Please enter a valid email address"),
 })
 
 type ForgotPasswordForm = z.infer<typeof forgotPasswordSchema>
@@ -26,7 +26,7 @@ export default function ForgotPasswordPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
-  const supabase = createClient()
+  const supabase = createBrowserClient()
 
   const {
     register,
@@ -34,6 +34,10 @@ export default function ForgotPasswordPage() {
     formState: { errors },
   } = useForm<ForgotPasswordForm>({
     resolver: zodResolver(forgotPasswordSchema),
+    defaultValues: {
+      email: "",
+    },
+    mode: "onSubmit",
   })
 
   const onSubmit = async (data: ForgotPasswordForm) => {
@@ -41,16 +45,13 @@ export default function ForgotPasswordPage() {
     setError(null)
 
     try {
-      // Convert alias to synthetic email for Supabase
-      const syntheticEmail = `${data.alias}@event-token.local`
-
-      // Send password reset email
-      const { error: resetError } = await supabase.auth.resetPasswordForEmail(syntheticEmail, {
+      // Send password reset email directly to the provided email
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(data.email, {
         redirectTo: `${window.location.origin}/reset-password`,
       })
 
       if (resetError) {
-        setError("Unable to send reset instructions. Please check your alias and try again.")
+        setError("Unable to send reset instructions. Please check your email and try again.")
         return
       }
 
@@ -127,7 +128,7 @@ export default function ForgotPasswordPage() {
           <CardHeader className="text-center">
             <CardTitle className="text-2xl text-slate-100">Reset Password</CardTitle>
             <CardDescription className="text-slate-400">
-              Enter your alias and we'll send you reset instructions
+              Enter your email address and we'll send you reset instructions
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -139,17 +140,17 @@ export default function ForgotPasswordPage() {
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="alias" className="text-slate-300">
-                  Alias
+                <Label htmlFor="email" className="text-slate-300">
+                  Email Address
                 </Label>
                 <Input
-                  id="alias"
-                  type="text"
-                  placeholder="your-alias"
+                  id="email"
+                  type="email"
+                  placeholder="your-email@example.com"
                   className="bg-slate-800 border-slate-700 text-slate-100 placeholder:text-slate-500 focus:border-violet-500"
-                  {...register("alias")}
+                  {...register("email")}
                 />
-                {errors.alias && <p className="text-sm text-red-400">{errors.alias.message}</p>}
+                {errors.email && <p className="text-sm text-red-400">{errors.email.message}</p>}
               </div>
 
               <Button

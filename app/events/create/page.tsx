@@ -29,7 +29,7 @@ const eventSchema = z
       .min(3, "Location must be at least 3 characters")
       .max(200, "Location must be less than 200 characters"),
     maxAttendees: z.number().min(1, "Must allow at least 1 attendee").max(10000, "Maximum 10,000 attendees allowed"),
-    nftEnabled: z.boolean().default(false),
+    nftEnabled: z.boolean(),
     nftPrice: z.number().min(0.001, "NFT price must be at least 0.001 ETH").optional(),
     nftSupply: z.number().min(1, "NFT supply must be at least 1").max(10000, "Maximum 10,000 NFTs allowed").optional(),
   })
@@ -61,8 +61,14 @@ export default function CreateEventPage() {
   } = useForm<EventFormData>({
     resolver: zodResolver(eventSchema),
     defaultValues: {
+      title: "",
+      description: "",
+      date: "",
+      location: "",
+      maxAttendees: 50,
       nftEnabled: false,
     },
+    mode: "onSubmit",
   })
 
   const nftEnabled = watch("nftEnabled")

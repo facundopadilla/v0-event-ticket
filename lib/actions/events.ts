@@ -3,7 +3,7 @@
 import { createServerClient } from "@/lib/supabase/server"
 
 export async function getPublicEvents() {
-  const supabase = createServerClient()
+  const supabase = await createServerClient()
 
   const { data: events, error } = await supabase
     .from("events")
@@ -23,7 +23,7 @@ export async function getPublicEvents() {
 }
 
 export async function searchEvents(query: string) {
-  const supabase = createServerClient()
+  const supabase = await createServerClient()
 
   const { data: events, error } = await supabase
     .from("events")
@@ -44,7 +44,7 @@ export async function searchEvents(query: string) {
 }
 
 export async function getEventsByLocation(location: string) {
-  const supabase = createServerClient()
+  const supabase = await createServerClient()
 
   const { data: events, error } = await supabase
     .from("events")
@@ -65,7 +65,7 @@ export async function getEventsByLocation(location: string) {
 }
 
 export async function getEventsByDateRange(startDate: string, endDate: string) {
-  const supabase = createServerClient()
+  const supabase = await createServerClient()
 
   const { data: events, error } = await supabase
     .from("events")
