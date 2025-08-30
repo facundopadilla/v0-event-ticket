@@ -50,11 +50,25 @@ export default function RegisterPage() {
     register,
     handleSubmit,
     formState: { errors },
+    watch,
+    getValues,
   } = useForm<RegisterForm>({
     resolver: zodResolver(registerSchema),
+    defaultValues: {
+      email: "",
+      displayName: "",
+      password: "",
+      confirmPassword: "",
+    },
+    mode: "onSubmit",
   })
 
+  const watchedValues = watch()
+  console.log("[v0] Form values:", watchedValues)
+  console.log("[v0] Form errors:", errors)
+
   const onSubmit = async (data: RegisterForm) => {
+    console.log("[v0] Form submitted with data:", data)
     setIsLoading(true)
     setError(null)
 
@@ -95,7 +109,6 @@ export default function RegisterPage() {
 
   const handleWalletConnect = async (address: string) => {
     try {
-      // Check if wallet is already registered
       const { data: existingProfile } = await supabase
         .from("profiles")
         .select("*")
@@ -107,7 +120,6 @@ export default function RegisterPage() {
         return
       }
 
-      // For now, just show a message that they need to complete registration with email
       setError("Wallet connected! Please complete registration with your email and password below.")
     } catch (err) {
       console.error("Wallet registration error:", err)
