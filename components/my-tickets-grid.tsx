@@ -135,12 +135,13 @@ export function MyTicketsGrid({ tickets }: MyTicketsGridProps) {
                       Transfer
                     </Button>
                     <Button
-                      disabled={true}
+                      onClick={() => handleList(ticket)}
+                      disabled={isUsed}
                       size="sm"
-                      className="flex-1 bg-gradient-to-r from-violet-600 to-cyan-600 hover:from-violet-700 hover:to-cyan-700 opacity-50"
+                      className="flex-1 bg-gradient-to-r from-violet-600 to-cyan-600 hover:from-violet-700 hover:to-cyan-700"
                     >
                       <DollarSign className="w-4 h-4 mr-2" />
-                      Sell (Coming Soon)
+                      Sell
                     </Button>
                   </div>
                 </div>
@@ -177,8 +178,8 @@ export function MyTicketsGrid({ tickets }: MyTicketsGridProps) {
         />
       )}
 
-      {/* List Dialog - temporarily disabled */}
-      {false && selectedTicket && (
+      {/* List Dialog */}
+      {selectedTicket && (
         <ListTicketDialog
           ticket={selectedTicket}
           open={listDialogOpen}

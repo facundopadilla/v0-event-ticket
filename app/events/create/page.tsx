@@ -93,6 +93,18 @@ export default function CreateEventPage() {
         return
       }
 
+      // Calculate nft_price before insertion
+      let nftPrice = null
+      if (data.nftEnabled && data.ticketPriceUsd) {
+        try {
+          nftPrice = await convertUsdToEth(data.ticketPriceUsd)
+        } catch (error) {
+          console.error("Error converting USD to ETH:", error)
+          // Use fallback conversion if API fails
+          nftPrice = data.ticketPriceUsd / 2500 // Fallback ETH price
+        }
+      }
+
       const { data: event, error: eventError } = await supabase
         .from("events")
         .insert({
@@ -104,7 +116,7 @@ export default function CreateEventPage() {
           creator_id: user.id,
           nft_enabled: data.nftEnabled,
           ticket_price_usd: data.nftEnabled ? data.ticketPriceUsd : null,
-          nft_price: data.nftEnabled && data.ticketPriceUsd ? convertUsdToEth(data.ticketPriceUsd) : null,
+          nft_price: nftPrice,
           nft_supply: data.nftEnabled ? data.maxAttendees : null, // Use maxAttendees as nft_supply
         })
         .select()

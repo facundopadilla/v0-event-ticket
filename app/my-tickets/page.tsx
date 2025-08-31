@@ -2,11 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { Ticket, ArrowLeft, Plus, Wallet } from "lucide-react";
+import { Ticket, ArrowLeft, Plus, Wallet, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { MyTicketsGrid } from "@/components/my-tickets-grid";
 import { useWallet } from '@/hooks/use-wallet';
-// import { useNFTContract } from '@/hooks/use-nft-contract'; // Temporarily disabled
+import { useNFTContract } from '@/hooks/use-nft-contract';
 import { WalletConnectButton } from '@/components/wallet-connect-button';
 
 interface TicketData {
@@ -17,30 +17,136 @@ interface TicketData {
   eventTitle: string;
 }
 
-// Mock data to prevent infinite loops
-const MOCK_TICKETS: TicketData[] = [
-  {
-    tokenId: "1",
-    eventId: "1",
-    isUsed: false,
-    mintedAt: Date.now().toString(),
-    eventTitle: "Mock Event 1"
-  },
-  {
-    tokenId: "2",
-    eventId: "2", 
-    isUsed: true,
-    mintedAt: (Date.now() - 86400000).toString(), // Yesterday
-    eventTitle: "Mock Event 2"
-  }
-];
-
 export default function MyTicketsPage() {
   const { isConnected, address } = useWallet();
-  // Temporarily use static data to prevent loops
-  const tickets = isConnected ? MOCK_TICKETS : [];
-  const loading = false;
-  const error = null;
+  const { getAllTicketsByOwner } = useNFTContract();
+  const [tickets, setTickets] = useState<TicketData[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Load user tickets when wallet is connected
+  useEffect(() => {
+    const loadTickets = async () => {
+      if (!isConnected || !address) {
+        console.log('Wallet not connected, clearing tickets');
+        setTickets([]);
+        return;
+      }
+
+      setLoading(true);
+      setError(null);
+      
+      try {
+        console.log('Loading tickets for address:', address);
+        const userTickets = await getAllTicketsByOwner(address);
+        console.log('Loaded tickets:', userTickets);
+        setTickets(userTickets);
+      } catch (err) {
+        console.error('Error loading tickets:', err);
+        setError('Failed to load your tickets. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadTickets();
+  }, [isConnected, address, getAllTicketsByOwner]);
+
+  // Debug function to check contract status
+  const debugContract = async () => {
+    if (!isConnected || !address) {
+      console.log('❌ Wallet not connected');
+      return;
+    }
+
+    console.log('🔍 Starting contract debug...');
+    console.log('📍 Wallet address:', address);
+    
+    try {
+      // Check if window.ethereum is available
+      if (!window.ethereum) {
+        console.log('❌ window.ethereum not available');
+        return;
+      }
+
+      // Check current network
+      const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+      console.log('🌐 Current chain ID:', chainId, '(should be 0x106a for Lisk Sepolia)');
+      
+      // Check if we're on the correct network
+      const expectedChainId = '0x106a'; // 4202 in hex
+      if (chainId !== expectedChainId) {
+        console.log('❌ Wrong network! Current:', chainId, 'Expected:', expectedChainId);
+        setError(`Please switch to Lisk Sepolia Testnet (Chain ID: 4202). Currently on: ${parseInt(chainId, 16)}`);
+        return;
+      } else {
+        console.log('✅ Correct network!');
+      }
+      
+      // Check contract deployment
+      const { isContractDeployed } = await import('@/lib/contracts/event-ticket-nft');
+      const deployed = isContractDeployed(true); // testnet = true
+      console.log('📋 Contract deployed:', deployed);
+      
+      // Try to get provider
+      const { ethers } = await import('ethers');
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      console.log('🔌 Provider created:', !!provider);
+      
+      // Check contract address
+      const { liskTestnet } = await import('@/lib/lisk-config');
+      console.log('📍 Configured contract address:', liskTestnet.contractAddress);
+      
+      // Verify contract exists at address
+      const code = await provider.getCode(liskTestnet.contractAddress);
+      console.log('📋 Contract code length:', code.length, '(should be > 2 for deployed contract)');
+      if (code === '0x') {
+        console.log('❌ No contract found at address');
+        setError(`No contract deployed at address: ${liskTestnet.contractAddress}`);
+        return;
+      } else {
+        console.log('✅ Contract found at address!');
+      }
+      
+      // Try to call getAllTicketsByOwner with detailed logging
+      console.log('🎫 Calling getAllTicketsByOwner...');
+      const userTickets = await getAllTicketsByOwner(address);
+      console.log('📊 Result:', userTickets);
+      
+      // Let's also test the conversion function
+      console.log('🔄 Testing UUID conversion...');
+      const testUuid = '24f5df33-4aaa-4ff6-a922-a30b8d9225b1'; // Your event UUID
+      const { uuidToEventId } = await import('@/components/ticket-purchase-card');
+      const numericEventId = uuidToEventId(testUuid);
+      console.log('📋 UUID:', testUuid, '→ Numeric:', numericEventId);
+      
+    } catch (error) {
+      console.error('💥 Debug error:', error);
+    }
+  };
+
+  // Manual refresh function
+  const refreshTickets = async () => {
+    if (!isConnected || !address) return;
+    
+    // Run debug first
+    await debugContract();
+    
+    setLoading(true);
+    setError(null);
+    
+    try {
+      console.log('Manually refreshing tickets for address:', address);
+      const userTickets = await getAllTicketsByOwner(address);
+      console.log('Refreshed tickets:', userTickets);
+      setTickets(userTickets);
+    } catch (err) {
+      console.error('Error refreshing tickets:', err);
+      setError('Failed to refresh your tickets. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-50">
@@ -87,8 +193,36 @@ export default function MyTicketsPage() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Page Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-slate-100 mb-2">My NFT Tickets</h1>
-          <p className="text-slate-400">Your event tickets stored as NFTs on the blockchain</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-slate-100 mb-2">My NFT Tickets</h1>
+              <p className="text-slate-400">Your event tickets stored as NFTs on the blockchain</p>
+            </div>
+            {isConnected && (
+              <div className="flex gap-2">
+                <Button
+                  onClick={debugContract}
+                  variant="outline"
+                  className="border-yellow-600 text-yellow-300 hover:text-yellow-200 bg-transparent"
+                >
+                  🔍 Debug
+                </Button>
+                <Button
+                  onClick={refreshTickets}
+                  disabled={loading}
+                  variant="outline"
+                  className="border-slate-600 text-slate-300 hover:text-white bg-transparent"
+                >
+                  {loading ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <span className="mr-2">🔄</span>
+                  )}
+                  Refresh
+                </Button>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Wallet Connection Check */}
@@ -114,12 +248,18 @@ export default function MyTicketsPage() {
             {/* Error State */}
             {error && (
               <div className="bg-red-900/20 border border-red-700 rounded-lg p-6 text-center">
-                <p className="text-red-400">{error}</p>
+                <p className="text-red-400 mb-4">{error}</p>
                 <Button 
-                  onClick={() => window.location.reload()} 
+                  onClick={refreshTickets}
+                  disabled={loading}
                   variant="outline" 
-                  className="mt-4 border-red-600 text-red-400 hover:text-red-300"
+                  className="border-red-600 text-red-400 hover:text-red-300"
                 >
+                  {loading ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <span className="mr-2">🔄</span>
+                  )}
                   Try Again
                 </Button>
               </div>

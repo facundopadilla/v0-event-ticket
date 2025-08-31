@@ -17,6 +17,7 @@ import {
 import { useWallet } from "@/hooks/use-wallet"
 import { useNFTContract } from "@/hooks/use-nft-contract"
 import { useToast } from "@/hooks/use-toast"
+import { useCryptoPrices } from "@/hooks/use-crypto-prices"
 
 interface TicketPurchaseCardProps {
   eventId: string
@@ -25,6 +26,28 @@ interface TicketPurchaseCardProps {
   ticketPrice: number
   availableTickets: number
   maxTicketsPerWallet: number
+}
+
+// Function to convert UUID string to a numeric event ID
+export function uuidToEventId(uuid: string): number {
+  // Remove hyphens and take first 8 characters, then convert to number
+  const hex = uuid.replace(/-/g, '').substring(0, 8)
+  const numericId = parseInt(hex, 16)
+  
+  // Ensure it's a valid number
+  if (isNaN(numericId)) {
+    console.error('Failed to convert UUID to numeric ID:', uuid)
+    // Fallback to a hash of the string
+    let hash = 0
+    for (let i = 0; i < uuid.length; i++) {
+      const char = uuid.charCodeAt(i)
+      hash = ((hash << 5) - hash) + char
+      hash = hash & hash // Convert to 32-bit integer
+    }
+    return Math.abs(hash)
+  }
+  
+  return numericId
 }
 
 function formatDate(dateString: string): string {
@@ -50,19 +73,40 @@ export function TicketPurchaseCard({
   
   const [ticketQuantity, setTicketQuantity] = useState(1)
   const [isLoading, setIsLoading] = useState(false)
+  const [priceData, setPriceData] = useState<{
+    usd: string
+    eth: string
+    ethRaw: number
+  } | null>(null)
   
   const { address, connectWallet, switchToLiskNetwork } = useWallet()
   const { mintTicket, getTicketsByOwnerForEvent } = useNFTContract()
   const { toast } = useToast()
+  const { ethPrice, loading: priceLoading, convertUsdToDisplayPrices } = useCryptoPrices()
 
-  // Reset ticketQuantity if it becomes NaN
+  // Load price data when component mounts or ticket price changes
+  useEffect(() => {
+    const loadPrices = async () => {
+      if (safeTicketPrice > 0) {
+        const prices = await convertUsdToDisplayPrices(safeTicketPrice)
+        setPriceData(prices)
+      } else {
+        setPriceData(null)
+      }
+    }
+    loadPrices()
+  }, [safeTicketPrice, convertUsdToDisplayPrices])
+
+  // Reset ticketQuantity if it becomes NaN (only once)
   useEffect(() => {
     if (isNaN(ticketQuantity)) {
+      console.log('Resetting invalid ticket quantity:', ticketQuantity)
       setTicketQuantity(1)
     }
   }, [ticketQuantity])
 
   const totalPrice = safeTicketPrice * (isNaN(ticketQuantity) ? 1 : ticketQuantity)
+  const totalPriceEth = priceData ? priceData.ethRaw * (isNaN(ticketQuantity) ? 1 : ticketQuantity) : 0
 
   const handlePurchase = async () => {
     if (!address) {
@@ -85,8 +129,12 @@ export function TicketPurchaseCard({
 
     setIsLoading(true)
     try {
+      // Convert UUID to numeric event ID
+      const numericEventId = uuidToEventId(eventId)
+      console.log('Converting eventId:', eventId, 'to numeric:', numericEventId)
+      
       // Check current user ticket count
-      const userTickets = await getTicketsByOwnerForEvent(address, Number(eventId))
+      const userTickets = await getTicketsByOwnerForEvent(address, numericEventId)
       const currentTickets = userTickets.length
       
       if (currentTickets + ticketQuantity > maxTicketsPerWallet) {
@@ -101,7 +149,7 @@ export function TicketPurchaseCard({
       // Purchase tickets one by one (since mintTicket handles single tickets)
       for (let i = 0; i < ticketQuantity; i++) {
         const result = await mintTicket(
-          Number(eventId), 
+          numericEventId,
           address, 
           eventTitle, 
           `ipfs://ticket-metadata-${eventId}-${Date.now()}-${i}`
@@ -216,10 +264,32 @@ export function TicketPurchaseCard({
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-600">Price per ticket</span>
-                <span className="font-medium">
-                  {safeTicketPrice === 0 ? 'Free' : `${safeTicketPrice} ETH`}
-                </span>
+                <div className="text-right">
+                  {safeTicketPrice === 0 ? (
+                    <span className="font-medium text-green-600">Free</span>
+                  ) : priceData ? (
+                    <div className="space-y-1">
+                      <div className="font-medium text-lg">${priceData.usd} USD</div>
+                      <div className="text-sm text-gray-500">{priceData.eth} ETH</div>
+                    </div>
+                  ) : priceLoading ? (
+                    <div className="flex items-center space-x-2">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span className="text-sm">Loading prices...</span>
+                    </div>
+                  ) : (
+                    <span className="font-medium">${safeTicketPrice} USD</span>
+                  )}
+                </div>
               </div>
+              
+              {/* ETH Price Display */}
+              {ethPrice && (
+                <div className="flex items-center justify-between text-xs text-gray-500">
+                  <span>Current ETH Price</span>
+                  <span>${ethPrice.toLocaleString()} USD</span>
+                </div>
+              )}
               
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-600">Available</span>
@@ -260,12 +330,27 @@ export function TicketPurchaseCard({
 
             {/* Total Price */}
             {safeTicketPrice > 0 && (
-              <div className="bg-gray-50 p-3 rounded-lg">
-                <div className="flex items-center justify-between">
-                  <span className="font-medium">Total</span>
-                  <div className="flex items-center space-x-1">
-                    <DollarSign className="w-4 h-4" />
-                    <span className="text-lg font-bold">{totalPrice} ETH</span>
+              <div className="bg-gray-50 p-4 rounded-lg space-y-3">
+                <div className="flex items-center justify-between text-sm">
+                  <span>Quantity × Price</span>
+                  <span>{ticketQuantity} × {safeTicketPrice === 0 ? 'Free' : '$' + (priceData?.usd || safeTicketPrice) + ' USD'}</span>
+                </div>
+                
+                <div className="border-t pt-3">
+                  <div className="flex items-center justify-between font-medium">
+                    <span>Total</span>
+                    <div className="text-right">
+                      {totalPrice === 0 ? (
+                        <span className="text-green-600">Free</span>
+                      ) : priceData ? (
+                        <div className="space-y-1">
+                          <div className="text-lg font-semibold">${(Number(priceData.usd) * ticketQuantity).toFixed(2)} USD</div>
+                          <div className="text-sm text-gray-500">{(Number(priceData.eth) * ticketQuantity).toFixed(6)} ETH</div>
+                        </div>
+                      ) : (
+                        <span className="text-lg font-semibold">${(safeTicketPrice * ticketQuantity).toFixed(2)} USD</span>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
