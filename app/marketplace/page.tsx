@@ -1,16 +1,18 @@
-import { createServerClient } from "@/lib/supabase/server"
-import { redirect } from "next/navigation"
+"use client"
+
+import { useEffect, useState } from "react"
+import { createBrowserClient } from "@/lib/supabase/client"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { Ticket, Search, ArrowLeft, Store, ShoppingCart, DollarSign } from "lucide-react"
+import { Ticket, Search, ArrowLeft, Store, ShoppingCart, DollarSign, Wallet } from "lucide-react"
 import Link from "next/link"
 import { MarketplaceGrid } from "@/components/marketplace-grid"
 import { MarketplaceFilters } from "@/components/marketplace-filters"
-import { MarketplaceTabs } from "@/components/marketplace-tabs"
-
-export const dynamic = "force-dynamic"
+import { useWallet } from "@/hooks/use-wallet"
+import { WalletConnectButton } from "@/components/wallet-connect-button"
 
 interface MarketplacePageProps {
   searchParams: {
@@ -23,20 +25,14 @@ interface MarketplacePageProps {
   }
 }
 
-export default async function MarketplacePage({ searchParams }: MarketplacePageProps) {
-  const supabase = await createServerClient()
-
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser()
-
-  if (error || !user) {
-    redirect("/login")
-  }
-
-  let activeListings = []
-  let hasNFTTables = true
+export default function MarketplacePage({ searchParams }: MarketplacePageProps) {
+  const [user, setUser] = useState<any>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [activeListings, setActiveListings] = useState<any[]>([])
+  const [hasNFTTables, setHasNFTTables] = useState(true)
+  const supabase = createBrowserClient()
+  const router = useRouter()
+  const { address, isConnected } = useWallet()
 
   // Mock data for demonstration purposes
   const MOCK_LISTINGS = [
@@ -95,101 +91,101 @@ export default async function MarketplacePage({ searchParams }: MarketplacePageP
         owner_wallet_address: "0x6Cd5B4b2F8A2C4c9F1d3E4F5A6B7C8D9E0F1A2B3",
         events: {
           id: "3",
-          title: "NFT Art Expo",
-          description: "Showcasing the best in NFT art",
+          title: "Web3 Developer Workshop",
+          description: "Hands-on workshop for Web3 development",
           date: "2024-09-30",
-          location: "Los Angeles, CA", 
-          max_attendees: 200
+          location: "Austin, TX",
+          max_attendees: 150
         }
       }
     },
     {
       id: "listing_4",
-      price_eth: 0.05,
+      price_eth: 0.12,
       seller_user_id: "seller_4",
-      seller_wallet_address: "0x9F8E7D6C5B4A3F2E1D0C9B8A7F6E5D4C3B2A1F0E",
+      seller_wallet_address: "0x4F5A6B7C8D9E0F1A2B3C4D5E6F7A8B9C0D1E2F3A",
       is_active: true,
       created_at: new Date(Date.now() - 14400000).toISOString(), // 4 hours ago
       nft_tickets: {
-        token_id: "156",
+        token_id: "456",
         is_used: false,
-        owner_wallet_address: "0x9F8E7D6C5B4A3F2E1D0C9B8A7F6E5D4C3B2A1F0E",
+        owner_wallet_address: "0x4F5A6B7C8D9E0F1A2B3C4D5E6F7A8B9C0D1E2F3A",
         events: {
           id: "4",
-          title: "Web3 Workshop",
-          description: "Hands-on Web3 development workshop",
+          title: "NFT Art Exhibition",
+          description: "Digital art showcase and auction",
           date: "2024-12-05",
-          location: "Austin, TX",
-          max_attendees: 100
-        }
-      }
-    },
-    {
-      id: "listing_5",
-      price_eth: 0.35,
-      seller_user_id: "seller_5", 
-      seller_wallet_address: "0x1A2B3C4D5E6F7A8B9C0D1E2F3A4B5C6D7E8F9A0B",
-      is_active: true,
-      created_at: new Date(Date.now() - 18000000).toISOString(), // 5 hours ago
-      nft_tickets: {
-        token_id: "1337",
-        is_used: false,
-        owner_wallet_address: "0x1A2B3C4D5E6F7A8B9C0D1E2F3A4B5C6D7E8F9A0B",
-        events: {
-          id: "5",
-          title: "ETH Denver 2024",
-          description: "The largest Ethereum event in the world",
-          date: "2024-02-29",
-          location: "Denver, CO",
-          max_attendees: 1000
-        }
-      }
-    },
-    {
-      id: "listing_6",
-      price_eth: 0.28,
-      seller_user_id: "seller_6",
-      seller_wallet_address: "0x7F5E9C8B4A6D3F1E2C9B7A5F8E6D4C2B1A9F7E5C",
-      is_active: true,
-      created_at: new Date(Date.now() - 21600000).toISOString(), // 6 hours ago
-      nft_tickets: {
-        token_id: "420",
-        is_used: false,
-        owner_wallet_address: "0x7F5E9C8B4A6D3F1E2C9B7A5F8E6D4C2B1A9F7E5C",
-        events: {
-          id: "6",
-          title: "Consensus 2024",
-          description: "The most important blockchain event",
-          date: "2024-05-15",
-          location: "Austin, TX",
-          max_attendees: 800
-        }
-      }
-    },
-    {
-      id: "listing_7",
-      price_eth: 0.12,
-      seller_user_id: "seller_7",
-      seller_wallet_address: "0x4B5A6F2E8C9D7F3A1B6E5C8F9A2D4E7B1C5A8F3E",
-      is_active: true,
-      created_at: new Date(Date.now() - 25200000).toISOString(), // 7 hours ago
-      nft_tickets: {
-        token_id: "777",
-        is_used: false,
-        owner_wallet_address: "0x4B5A6F2E8C9D7F3A1B6E5C8F9A2D4E7B1C5A8F3E",
-        events: {
-          id: "7",
-          title: "Crypto Gaming Convention",
-          description: "The future of blockchain gaming",
-          date: "2024-08-22",
-          location: "Las Vegas, NV",
+          location: "Miami, FL",
           max_attendees: 400
         }
       }
     },
     {
+      id: "listing_5",
+      price_eth: 0.18,
+      seller_user_id: "seller_5",
+      seller_wallet_address: "0x9C0D1E2F3A4B5C6D7E8F9A0B1C2D3E4F5A6B7C8D",
+      is_active: true,
+      created_at: new Date(Date.now() - 18000000).toISOString(), // 5 hours ago
+      nft_tickets: {
+        token_id: "777",
+        is_used: false,
+        owner_wallet_address: "0x9C0D1E2F3A4B5C6D7E8F9A0B1C2D3E4F5A6B7C8D",
+        events: {
+          id: "5",
+          title: "Gaming & Metaverse Expo",
+          description: "Explore the future of gaming and virtual worlds",
+          date: "2024-08-25",
+          location: "Los Angeles, CA",
+          max_attendees: 800
+        }
+      }
+    },
+    {
+      id: "listing_6",
+      price_eth: 0.09,
+      seller_user_id: "seller_6",
+      seller_wallet_address: "0x3E4F5A6B7C8D9E0F1A2B3C4D5E6F7A8B9C0D1E2F",
+      is_active: true,
+      created_at: new Date(Date.now() - 21600000).toISOString(), // 6 hours ago
+      nft_tickets: {
+        token_id: "123",
+        is_used: false,
+        owner_wallet_address: "0x3E4F5A6B7C8D9E0F1A2B3C4D5E6F7A8B9C0D1E2F",
+        events: {
+          id: "6",
+          title: "Crypto Trading Masterclass",
+          description: "Learn advanced trading strategies",
+          date: "2024-06-12",
+          location: "Chicago, IL",
+          max_attendees: 100
+        }
+      }
+    },
+    {
+      id: "listing_7",
+      price_eth: 0.25,
+      seller_user_id: "seller_7",
+      seller_wallet_address: "0x7A8B9C0D1E2F3A4B5C6D7E8F9A0B1C2D3E4F5A6B",
+      is_active: true,
+      created_at: new Date(Date.now() - 25200000).toISOString(), // 7 hours ago
+      nft_tickets: {
+        token_id: "888",
+        is_used: false,
+        owner_wallet_address: "0x7A8B9C0D1E2F3A4B5C6D7E8F9A0B1C2D3E4F5A6B",
+        events: {
+          id: "7",
+          title: "Ethereum Developers Conference",
+          description: "Latest developments in Ethereum ecosystem",
+          date: "2024-11-08",
+          location: "Berlin, Germany",
+          max_attendees: 700
+        }
+      }
+    },
+    {
       id: "listing_8",
-      price_eth: 0.45,
+      price_eth: 0.14,
       seller_user_id: "seller_8",
       seller_wallet_address: "0x2E8C9F5A7B4D1F6E3A8C5B9F2E4D7A1B6C8F5A3E",
       is_active: true,
@@ -231,76 +227,142 @@ export default async function MarketplacePage({ searchParams }: MarketplacePageP
     }
   ]
 
-  try {
-    // Try to get real data first, fallback to mock data
-    let query = supabase
-      .from("marketplace_listings")
-      .select(`
-        *,
-        nft_tickets (
-          *,
-          events (
-            id,
-            title,
-            description,
-            date,
-            location,
-            max_attendees
-          )
-        )
-      `)
-      .eq("is_active", true)
-      .order("created_at", { ascending: false })
-
-    // Apply search filter
-    if (searchParams.search) {
-      query = query.ilike("nft_tickets.events.title", `%${searchParams.search}%`)
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      setUser(user)
+      setIsLoading(false)
     }
+    
+    checkAuth()
+  }, [supabase])
 
-    // Apply price filters
-    if (searchParams.priceMin) {
-      query = query.gte("price_eth", Number.parseFloat(searchParams.priceMin))
-    }
-    if (searchParams.priceMax) {
-      query = query.lte("price_eth", Number.parseFloat(searchParams.priceMax))
-    }
+  useEffect(() => {
+    const loadListings = async () => {
+      try {
+        // Try to get real data first, fallback to mock data
+        let query = supabase
+          .from("marketplace_listings")
+          .select(`
+            *,
+            nft_tickets (
+              *,
+              events (
+                id,
+                title,
+                description,
+                date,
+                location,
+                max_attendees
+              )
+            )
+          `)
+          .eq("is_active", true)
+          .order("created_at", { ascending: false })
 
-    const { data: listings, error: listingsError } = await query
+        // Apply search filter
+        if (searchParams.search) {
+          query = query.ilike("nft_tickets.events.title", `%${searchParams.search}%`)
+        }
 
-    if (listingsError) {
-      // If database tables don't exist or error, use mock data
-      console.log("Using mock data for marketplace listings")
-      activeListings = MOCK_LISTINGS
-      
-      // Apply search filter to mock data
-      if (searchParams.search) {
-        activeListings = activeListings.filter(listing => 
-          listing.nft_tickets.events.title.toLowerCase().includes(searchParams.search!.toLowerCase())
-        )
+        // Apply price filters
+        if (searchParams.priceMin) {
+          query = query.gte("price_eth", Number.parseFloat(searchParams.priceMin))
+        }
+        if (searchParams.priceMax) {
+          query = query.lte("price_eth", Number.parseFloat(searchParams.priceMax))
+        }
+
+        const { data: listings, error: listingsError } = await query
+
+        if (listingsError) {
+          // If database tables don't exist or error, use mock data
+          console.log("Using mock data for marketplace listings")
+          let filteredListings = MOCK_LISTINGS
+          
+          // Apply search filter to mock data
+          if (searchParams.search) {
+            filteredListings = filteredListings.filter(listing => 
+              listing.nft_tickets.events.title.toLowerCase().includes(searchParams.search!.toLowerCase())
+            )
+          }
+          
+          // Apply price filters to mock data
+          if (searchParams.priceMin) {
+            filteredListings = filteredListings.filter(listing => 
+              listing.price_eth >= Number.parseFloat(searchParams.priceMin!)
+            )
+          }
+          if (searchParams.priceMax) {
+            filteredListings = filteredListings.filter(listing => 
+              listing.price_eth <= Number.parseFloat(searchParams.priceMax!)
+            )
+          }
+          
+          setActiveListings(filteredListings)
+          setHasNFTTables(false)
+        } else {
+          setActiveListings(listings && listings.length > 0 ? listings : MOCK_LISTINGS)
+          setHasNFTTables(true)
+        }
+      } catch (error) {
+        console.error("Error loading listings:", error)
+        setActiveListings(MOCK_LISTINGS)
+        setHasNFTTables(false)
       }
-      
-      // Apply price filters to mock data
-      if (searchParams.priceMin) {
-        activeListings = activeListings.filter(listing => 
-          listing.price_eth >= Number.parseFloat(searchParams.priceMin!)
-        )
-      }
-      if (searchParams.priceMax) {
-        activeListings = activeListings.filter(listing => 
-          listing.price_eth <= Number.parseFloat(searchParams.priceMax!)
-        )
-      }
-    } else {
-      activeListings = listings && listings.length > 0 ? listings : MOCK_LISTINGS
     }
-  } catch (error) {
-    console.error("Error fetching marketplace listings, using mock data:", error)
-    activeListings = MOCK_LISTINGS
+
+    loadListings()
+  }, [supabase, searchParams])
+
+  // Allow access if user is logged in OR has wallet connected
+  const hasAccess = user || isConnected
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-slate-950 text-slate-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-violet-500 mx-auto mb-4"></div>
+          <p className="text-slate-400">Loading marketplace...</p>
+        </div>
+      </div>
+    )
   }
 
-  // Remove the setup message since we have mock data to show
-  // if (!hasNFTTables) { ... }
-
+  if (!hasAccess) {
+    return (
+      <div className="min-h-screen bg-slate-950 text-slate-50 flex items-center justify-center p-4">
+        <div className="max-w-md w-full">
+          <Card className="bg-slate-900/50 border-slate-800">
+            <CardContent className="p-6 text-center">
+              <div className="w-16 h-16 bg-gradient-to-br from-violet-500 to-cyan-500 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Store className="w-8 h-8 text-white" />
+              </div>
+              <h1 className="text-2xl font-bold text-slate-100 mb-4">Access Required</h1>
+              <p className="text-slate-400 mb-6">
+                To access the marketplace, you need to either sign in or connect your wallet.
+              </p>
+              <div className="space-y-4">
+                <WalletConnectButton className="w-full" />
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-slate-700"></div>
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-slate-900 px-2 text-slate-500">Or</span>
+                  </div>
+                </div>
+                <Button asChild className="w-full bg-gradient-to-r from-violet-600 to-cyan-600 hover:from-violet-700 hover:to-cyan-700">
+                  <Link href="/login">Sign In</Link>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    )
+  }
+  // Main marketplace render
   return (
     <div className="min-h-screen bg-slate-950 text-slate-50">
       {/* Header */}
@@ -316,23 +378,10 @@ export default async function MarketplacePage({ searchParams }: MarketplacePageP
               </span>
             </div>
             <div className="flex items-center gap-4">
-              <Button
-                asChild
-                variant="outline"
-                className="border-slate-600 text-slate-300 hover:text-white bg-transparent"
-              >
-                <Link href="/my-tickets">
+              <Button asChild variant="outline" className="border-slate-600 text-slate-300 hover:text-white bg-transparent">
+                <Link href="/events">
                   <Ticket className="w-4 h-4 mr-2" />
-                  My Tickets
-                </Link>
-              </Button>
-              <Button
-                asChild
-                className="bg-gradient-to-r from-violet-600 to-cyan-600 hover:from-violet-700 hover:to-cyan-700"
-              >
-                <Link href="/marketplace?tab=sell">
-                  <DollarSign className="w-4 h-4 mr-2" />
-                  Sell Tickets
+                  Browse Events
                 </Link>
               </Button>
               <Button asChild variant="ghost" className="text-slate-300 hover:text-white">
@@ -346,6 +395,18 @@ export default async function MarketplacePage({ searchParams }: MarketplacePageP
         </div>
       </header>
 
+      {/* Demo Banner */}
+      <div className="bg-gradient-to-r from-violet-600/20 to-cyan-600/20 border-b border-violet-500/30">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+          <div className="flex items-center justify-center gap-2 text-sm">
+            <Badge variant="secondary" className="bg-violet-600 text-white">Demo Mode</Badge>
+            <span className="text-violet-200">
+              Showing sample NFT ticket listings for demonstration purposes
+            </span>
+          </div>
+        </div>
+      </div>
+
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Page Header */}
@@ -354,11 +415,15 @@ export default async function MarketplacePage({ searchParams }: MarketplacePageP
           <p className="text-slate-400">Buy and sell event tickets as NFTs on the blockchain</p>
         </div>
 
-        {/* Marketplace Tabs */}
-        <MarketplaceTabs 
-          listings={activeListings} 
-          currentUserId={user.id} 
-          searchParams={searchParams}
+        {/* Search Filters */}
+        <div className="mb-6">
+          <MarketplaceFilters searchParams={searchParams} />
+        </div>
+
+        {/* Marketplace Grid */}
+        <MarketplaceGrid 
+          listings={activeListings}
+          currentUserId={user?.id || address || "anonymous"}
         />
       </main>
     </div>

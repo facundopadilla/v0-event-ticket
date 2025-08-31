@@ -95,10 +95,10 @@ export default function EventDetailsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-slate-950 text-slate-50">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+            <Loader2 className="h-8 w-8 animate-spin text-violet-400" />
           </div>
         </div>
       </div>
@@ -107,18 +107,18 @@ export default function EventDetailsPage() {
 
   if (error || !event) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-slate-950 text-slate-50">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <Card className="text-center py-12">
+          <Card className="bg-slate-900/50 border-slate-800 text-center py-12">
             <CardContent>
               <AlertCircle className="h-12 w-12 text-red-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
+              <h3 className="text-lg font-medium text-slate-100 mb-2">
                 {error || "Event not found"}
               </h3>
-              <p className="text-gray-600 mb-6">
+              <p className="text-slate-400 mb-6">
                 The event you're looking for doesn't exist or has been removed.
               </p>
-              <Button asChild>
+              <Button asChild className="bg-gradient-to-r from-violet-600 to-cyan-600 hover:from-violet-700 hover:to-cyan-700">
                 <Link href="/dashboard">
                   <ArrowLeft className="h-4 w-4 mr-2" />
                   Back to Dashboard
@@ -132,98 +132,113 @@ export default function EventDetailsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="flex items-center gap-4 mb-8">
-          <Button variant="ghost" asChild>
-            <Link href="/dashboard">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back
-            </Link>
-          </Button>
-          
-          {isEventCreator && (
-            <Button variant="outline" asChild>
-              <Link href={`/events/${event.id}/edit`}>
-                <Edit className="h-4 w-4 mr-2" />
-                Edit Event
-              </Link>
-            </Button>
-          )}
-          
-          <Button variant="outline">
-            <Share2 className="h-4 w-4 mr-2" />
-            Share
-          </Button>
+    <div className="min-h-screen bg-slate-950 text-slate-50">
+      {/* Header */}
+      <header className="border-b border-slate-800 bg-slate-950/80 backdrop-blur-sm">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center gap-4">
+              <Button variant="ghost" asChild className="text-slate-300 hover:text-white">
+                <Link href="/events">
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Back to Events
+                </Link>
+              </Button>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              {isEventCreator && (
+                <Button variant="outline" asChild className="border-slate-600 text-slate-300 hover:text-white bg-transparent">
+                  <Link href={`/events/${event.id}/edit`}>
+                    <Edit className="h-4 w-4 mr-2" />
+                    Edit Event
+                  </Link>
+                </Button>
+              )}
+              
+              <Button variant="outline" className="border-slate-600 text-slate-300 hover:text-white bg-transparent">
+                <Share2 className="h-4 w-4 mr-2" />
+                Share
+              </Button>
+            </div>
+          </div>
         </div>
+      </header>
+
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
         {/* Event Details */}
         <div className="grid lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-6">
             {/* Main Event Card */}
-            <Card>
+            <Card className="bg-slate-900/50 border-slate-800">
               <CardHeader>
                 <div className="flex items-start justify-between">
                   <div>
-                    <CardTitle className="text-2xl font-bold">{event.title}</CardTitle>
-                    <CardDescription className="text-lg mt-2">
+                    <CardTitle className="text-3xl font-bold text-slate-100 mb-2">{event.title}</CardTitle>
+                    <CardDescription className="text-lg text-slate-300">
                       {event.description}
                     </CardDescription>
                   </div>
-                  <Badge variant={isEventPast ? "secondary" : "default"}>
+                  <Badge 
+                    variant={isEventPast ? "secondary" : "default"}
+                    className={isEventPast 
+                      ? "bg-slate-700 text-slate-300" 
+                      : "bg-gradient-to-r from-violet-500 to-cyan-500 text-white"
+                    }
+                  >
                     {isEventPast ? "Past Event" : "Upcoming"}
                   </Badge>
                 </div>
               </CardHeader>
               <CardContent className="space-y-6">
                 {/* Event Details */}
-                <div className="grid md:grid-cols-2 gap-4">
+                <div className="grid md:grid-cols-2 gap-6">
                   <div className="flex items-center gap-3">
-                    <Calendar className="h-5 w-5 text-gray-400" />
+                    <Calendar className="h-5 w-5 text-violet-400" />
                     <div>
-                      <p className="font-medium">Date & Time</p>
-                      <p className="text-sm text-gray-600">{formatDate(event.date)}</p>
+                      <p className="font-medium text-slate-200">Date & Time</p>
+                      <p className="text-sm text-slate-400">{formatDate(event.date)}</p>
                     </div>
                   </div>
                   
                   <div className="flex items-center gap-3">
-                    <MapPin className="h-5 w-5 text-gray-400" />
+                    <MapPin className="h-5 w-5 text-cyan-400" />
                     <div>
-                      <p className="font-medium">Location</p>
-                      <p className="text-sm text-gray-600">{event.location}</p>
+                      <p className="font-medium text-slate-200">Location</p>
+                      <p className="text-sm text-slate-400">{event.location}</p>
                     </div>
                   </div>
                   
                   <div className="flex items-center gap-3">
-                    <Users className="h-5 w-5 text-gray-400" />
+                    <Users className="h-5 w-5 text-green-400" />
                     <div>
-                      <p className="font-medium">Capacity</p>
-                      <p className="text-sm text-gray-600">{event.max_attendees} attendees</p>
+                      <p className="font-medium text-slate-200">Capacity</p>
+                      <p className="text-sm text-slate-400">{event.max_attendees} attendees</p>
                     </div>
                   </div>
                   
                   {event.nft_enabled && event.ticket_price_usd && (
                     <div className="flex items-center gap-3">
-                      <DollarSign className="h-5 w-5 text-gray-400" />
+                      <DollarSign className="h-5 w-5 text-yellow-400" />
                       <div>
-                        <p className="font-medium">Ticket Price</p>
-                        <p className="text-sm text-gray-600">${event.ticket_price_usd} USD</p>
+                        <p className="font-medium text-slate-200">Ticket Price</p>
+                        <p className="text-sm text-slate-400">${event.ticket_price_usd} USD</p>
                       </div>
                     </div>
                   )}
                 </div>
 
                 {/* Organizer */}
-                <div className="border-t pt-4">
-                  <p className="font-medium mb-2">Organizer</p>
+                <div className="border-t border-slate-700 pt-6">
+                  <p className="font-medium text-slate-200 mb-3">Organizer</p>
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
-                      <Users className="h-5 w-5 text-gray-500" />
+                    <div className="w-10 h-10 bg-gradient-to-br from-violet-500 to-cyan-500 rounded-full flex items-center justify-center">
+                      <Users className="h-5 w-5 text-white" />
                     </div>
                     <div>
-                      <p className="font-medium">Event Creator</p>
-                      <p className="text-sm text-gray-600">Created on {new Date(event.created_at).toLocaleDateString()}</p>
+                      <p className="font-medium text-slate-200">Event Creator</p>
+                      <p className="text-sm text-slate-400">Created on {new Date(event.created_at).toLocaleDateString()}</p>
                     </div>
                   </div>
                 </div>
@@ -246,64 +261,64 @@ export default function EventDetailsPage() {
             )}
 
             {/* Event Information */}
-            <Card>
+            <Card className="bg-slate-900/50 border-slate-800">
               <CardHeader>
-                <CardTitle>Event Information</CardTitle>
+                <CardTitle className="text-slate-100">Event Information</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Max Attendees</span>
-                  <span className="font-medium">{event.max_attendees}</span>
+              <CardContent className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-400">Max Attendees</span>
+                  <span className="font-medium text-slate-200">{event.max_attendees}</span>
                 </div>
                 
                 {event.nft_enabled && (
                   <>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">NFT Enabled</span>
-                      <Badge variant="default">Yes</Badge>
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-400">NFT Enabled</span>
+                      <Badge className="bg-gradient-to-r from-violet-500 to-cyan-500 text-white">Yes</Badge>
                     </div>
                     
                     {event.nft_supply && (
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">NFT Supply</span>
-                        <span className="font-medium">{event.nft_supply}</span>
+                      <div className="flex justify-between items-center">
+                        <span className="text-slate-400">NFT Supply</span>
+                        <span className="font-medium text-slate-200">{event.nft_supply}</span>
                       </div>
                     )}
                     
                     {event.ticket_price_usd && (
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Ticket Price</span>
-                        <span className="font-medium">${event.ticket_price_usd} USD</span>
+                      <div className="flex justify-between items-center">
+                        <span className="text-slate-400">Ticket Price</span>
+                        <span className="font-medium text-green-400">${event.ticket_price_usd} USD</span>
                       </div>
                     )}
                     
                     {event.nft_price && (
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">ETH Price</span>
-                        <span className="font-medium">{event.nft_price} ETH</span>
+                      <div className="flex justify-between items-center">
+                        <span className="text-slate-400">ETH Price</span>
+                        <span className="font-medium text-cyan-400">{event.nft_price} ETH</span>
                       </div>
                     )}
                   </>
                 )}
                 
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Created</span>
-                  <span className="font-medium">{new Date(event.created_at).toLocaleDateString()}</span>
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-400">Created</span>
+                  <span className="font-medium text-slate-200">{new Date(event.created_at).toLocaleDateString()}</span>
                 </div>
               </CardContent>
             </Card>
 
             {/* Event Status */}
             {!event.nft_enabled && (
-              <Card>
+              <Card className="bg-slate-900/50 border-slate-800">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <AlertCircle className="h-5 w-5 text-gray-500" />
+                  <CardTitle className="flex items-center gap-2 text-slate-100">
+                    <AlertCircle className="h-5 w-5 text-orange-400" />
                     Standard Event
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-slate-400">
                     This event does not have NFT ticketing enabled. Contact the organizer for ticket information.
                   </p>
                 </CardContent>

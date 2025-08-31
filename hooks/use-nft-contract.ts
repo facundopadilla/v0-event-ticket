@@ -180,19 +180,26 @@ export function useNFTContract(isTestnet = true) {
   };
 
   // Get ALL tickets for a user across all events
-  const getAllTicketsByOwner = async (owner: string): Promise<Array<{
+  const getAllTicketsByOwner = useCallback(async (owner: string): Promise<Array<{
     tokenId: string;
     eventId: string;
     isUsed: boolean;
     mintedAt: string;
     eventTitle: string;
   }>> => {
+    console.log('🎫 getAllTicketsByOwner called with owner:', owner);
+    
     const provider = getProvider();
-    if (!provider || !owner) return [];
+    if (!provider || !owner) {
+      console.log('❌ No provider or owner');
+      return [];
+    }
+
+    console.log('📋 Contract deployed status:', contractDeployed);
 
     // In development mode without deployed contract, return mock data
     if (!contractDeployed) {
-      console.log('Using mock tickets for all events');
+      console.log('🎭 Using mock tickets for all events');
       return [
         {
           tokenId: "1",
@@ -213,41 +220,58 @@ export function useNFTContract(isTestnet = true) {
     
     try {
       const contract = getEventTicketNFTContract(provider, isTestnet);
-      console.log("Getting all tickets for user:", owner);
+      console.log("🔗 Contract instance created");
+      console.log("📍 Contract address:", await contract.getAddress());
+      console.log("🔍 Getting all tickets for user:", owner);
       
-      // Get total supply - we'll iterate through all tokens
-      // Note: This is not the most efficient way, but it works for the hackathon
-      // In production, you'd want events or a mapping
+      // Get all TicketMinted events for this user
+      console.log("📡 Querying TicketMinted events...");
+      const filter = contract.filters.TicketMinted(null, null, owner);
+      console.log("🔍 Filter created:", filter);
+      
+      const events = await contract.queryFilter(filter, 0, 'latest');
+      console.log(`📊 Found ${events.length} TicketMinted events for user:`, events);
+      
       const userTickets = [];
       
-      // Start from token ID 1 and check up to a reasonable limit
-      // In a real implementation, you'd track the next token ID
-      for (let tokenId = 1; tokenId <= 10000; tokenId++) {
+      for (const event of events) {
         try {
-          const tokenOwner = await contract.ownerOf(BigInt(tokenId));
-          if (tokenOwner.toLowerCase() === owner.toLowerCase()) {
-            const ticketInfo = await contract.tickets(BigInt(tokenId));
+          // Type guard for EventLog
+          if ('args' in event) {
+            console.log("🎫 Processing event with args:", event.args);
+            const tokenId = event.args[0]; // First argument is tokenId
+            console.log("🆔 Token ID:", tokenId.toString());
+            
+            const ticketInfo = await contract.tickets(tokenId);
+            console.log("📋 Ticket info raw:", ticketInfo);
+            
+            // Handle the response as array instead of object
+            const [eventId, isUsed, mintedAt, eventTitle] = ticketInfo;
+            
             userTickets.push({
               tokenId: tokenId.toString(),
-              eventId: ticketInfo.eventId.toString(),
-              isUsed: ticketInfo.isUsed,
-              mintedAt: ticketInfo.mintedAt.toString(),
-              eventTitle: ticketInfo.eventTitle
+              eventId: eventId.toString(),
+              isUsed: isUsed,
+              mintedAt: mintedAt.toString(),
+              eventTitle: eventTitle
             });
+          } else {
+            console.log("⚠️ Event without args:", event);
           }
         } catch (error) {
-          // Token doesn't exist or other error, stop searching
-          break;
+          console.error('💥 Error getting ticket info for event:', error);
+          // Continue with other tickets even if one fails
         }
       }
 
-      console.log("Found user tickets:", userTickets);
+      console.log("✅ Found user tickets:", userTickets);
       return userTickets;
     } catch (error) {
-      console.error('Error getting all tickets by owner:', error);
+      console.error('💥 Error getting all tickets by owner:', error);
+      // Return empty array instead of throwing to allow UI to show "no tickets"
       return [];
     }
-  };
+  }, [contractDeployed, isTestnet]);
 
   const getTicketInfo = async (tokenId: bigint): Promise<TicketInfo | null> => {
     const provider = getProvider();

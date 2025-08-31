@@ -145,46 +145,16 @@ export function EventCard({ event }: EventCardProps) {
         )}
       </CardContent>
 
-      <CardFooter className="pt-3 flex gap-2">
+      <CardFooter className="pt-3">
         <Button
           asChild
-          variant="outline"
           size="sm"
-          className="flex-1 border-slate-600 text-slate-300 hover:bg-slate-700 bg-transparent"
+          className="w-full bg-gradient-to-r from-violet-500 to-cyan-500 hover:from-violet-600 hover:to-cyan-600 text-white"
         >
           <Link href={`/events/${event.id}`}>
-            <ExternalLink className="h-4 w-4 mr-2" />
-            View Details
+            {event.nft_enabled ? "Buy Ticket" : "View Event Details"}
           </Link>
         </Button>
-
-        {event.nft_enabled && (
-          <Button
-            onClick={handlePurchaseTicket}
-            disabled={!isConnected || soldOut || isLoading || isPurchased}
-            size="sm"
-            className={`flex-1 ${
-              isPurchased
-                ? "bg-green-600 hover:bg-green-700"
-                : "bg-gradient-to-r from-violet-500 to-cyan-500 hover:from-violet-600 hover:to-cyan-600"
-            } text-white`}
-          >
-            {isPurchased ? (
-              <>
-                <CheckCircle className="h-4 w-4 mr-2" />
-                Purchased
-              </>
-            ) : isLoading ? (
-              "Processing..."
-            ) : soldOut ? (
-              "Sold Out"
-            ) : !isConnected ? (
-              "Connect Wallet"
-            ) : (
-              "Buy Ticket"
-            )}
-          </Button>
-        )}
       </CardFooter>
     </Card>
   )

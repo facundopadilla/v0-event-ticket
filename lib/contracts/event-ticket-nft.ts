@@ -7,7 +7,7 @@ export const EVENT_TICKET_NFT_ABI = [
   "function ticketPrice() view returns (uint256)",
   "function MAX_TICKETS_PER_EVENT() view returns (uint256)",
   "function ticketsPerEvent(uint256 eventId, address owner) view returns (uint256)",
-  "function tickets(uint256 tokenId) view returns (tuple(uint256 eventId, bool isUsed, uint256 mintedAt, string eventTitle))",
+  "function tickets(uint256 tokenId) view returns (uint256 eventId, bool isUsed, uint256 mintedAt, string eventTitle)",
   "function getTicketsByOwnerForEvent(address owner, uint256 eventId) view returns (uint256[])",
   "function getTicketsForEvent(uint256 eventId) view returns (uint256[])",
   "function ownerOf(uint256 tokenId) view returns (address)",

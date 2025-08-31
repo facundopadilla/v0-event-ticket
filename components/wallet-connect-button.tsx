@@ -150,30 +150,32 @@ export function WalletConnectButton({
       )}
 
       {isConnected ? (
-        <div className="flex items-center gap-2">
+        <div className="space-y-3">
           <div className="flex items-center gap-2 px-3 py-2 bg-slate-800/50 rounded-lg border border-slate-700">
             <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
             <span className="text-sm text-slate-300 font-mono">{formatAddress(address)}</span>
           </div>
-          <Button
-            variant="outline"
-            size={size}
-            onClick={handleDisconnect}
-            className={`${className} border-slate-600 text-slate-300 hover:bg-slate-700`}
-          >
-            Disconnect
-          </Button>
-          {showClearButton && (
+          <div className="flex items-center gap-2">
             <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleClearWalletState}
-              className="text-slate-400 hover:text-slate-300 px-2"
-              title="Clear wallet cache completely"
+              variant="outline"
+              size={size}
+              onClick={handleDisconnect}
+              className={`${className} flex-1 border-red-600 text-red-400 hover:bg-red-600/10 hover:text-red-300 hover:border-red-500`}
             >
-              <RefreshCw className="h-3 w-3" />
+              Disconnect
             </Button>
-          )}
+            {showClearButton && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleClearWalletState}
+                className="text-slate-400 hover:text-slate-300 px-2"
+                title="Clear wallet cache completely"
+              >
+                <RefreshCw className="h-3 w-3" />
+              </Button>
+            )}
+          </div>
         </div>
       ) : (
         <div className="space-y-2">
