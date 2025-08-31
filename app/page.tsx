@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { ArrowRight, Shield, Zap, Users, QrCode, Calendar, Ticket } from "lucide-react"
+import { HeroBackground } from "@/components/hero-background"
 
 export default function HomePage() {
   return (
@@ -36,18 +37,24 @@ export default function HomePage() {
       </header>
 
       {/* Hero Section */}
-      <section className="relative py-20 lg:py-32">
-        <div className="absolute inset-0 bg-gradient-to-br from-violet-900/20 via-slate-950 to-cyan-900/20" />
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <Badge variant="secondary" className="mb-6 bg-slate-800 text-violet-300 border-violet-500/20">
+      <section className="relative py-20 lg:py-32 overflow-hidden">
+        {/* Background Video/Animation */}
+        <HeroBackground />
+        
+        {/* Gradient Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-br from-violet-900/30 via-slate-950/80 to-cyan-900/30 z-10" />
+        
+        {/* Content */}
+        <div className="relative z-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <Badge variant="secondary" className="mb-6 bg-slate-800/80 backdrop-blur-sm text-violet-300 border-violet-500/20">
             🚀 Now in Beta
           </Badge>
-          <h1 className="text-4xl lg:text-6xl font-bold mb-6 bg-gradient-to-r from-violet-400 via-slate-200 to-cyan-400 bg-clip-text text-transparent leading-tight">
+          <h1 className="text-4xl lg:text-6xl font-bold mb-6 bg-gradient-to-r from-violet-400 via-slate-200 to-cyan-400 bg-clip-text text-transparent leading-tight drop-shadow-2xl">
             Digital Event Tokens
             <br />
             <span className="text-slate-300">Made Simple</span>
           </h1>
-          <p className="text-xl text-slate-400 mb-8 max-w-3xl mx-auto leading-relaxed">
+          <p className="text-xl text-slate-300 mb-8 max-w-3xl mx-auto leading-relaxed drop-shadow-lg">
             Create, distribute, and manage secure digital tokens for your events. No more lost tickets, no more fraud -
             just seamless event access for everyone.
           </p>
@@ -55,7 +62,7 @@ export default function HomePage() {
             <Link href="/get-started">
               <Button
                 size="lg"
-                className="bg-gradient-to-r from-violet-600 to-cyan-600 hover:from-violet-700 hover:to-cyan-700 text-white border-0 px-8"
+                className="bg-gradient-to-r from-violet-600 to-cyan-600 hover:from-violet-700 hover:to-cyan-700 text-white border-0 px-8 shadow-2xl backdrop-blur-sm"
               >
                 Create Your First Token
                 <ArrowRight className="ml-2 w-4 h-4" />
@@ -64,7 +71,7 @@ export default function HomePage() {
             <Button
               size="lg"
               variant="outline"
-              className="border-slate-700 text-slate-300 hover:bg-slate-800 bg-transparent"
+              className="border-slate-600/50 text-slate-200 hover:bg-slate-800/50 bg-slate-900/30 backdrop-blur-sm shadow-xl"
             >
               Watch Demo
             </Button>

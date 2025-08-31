@@ -228,17 +228,20 @@ node check-balance.js
 ## 🔗 Important Links
 
 ### Application
+
 - **🚀 Live Demo**: [https://v0-event-ticket-git-local-facundos-projects-8969bc26.vercel.app/](https://v0-event-ticket-git-local-facundos-projects-8969bc26.vercel.app/)
 - **💻 Local Development**: http://localhost:3000
 - **📱 Mobile Responsive**: Fully optimized for mobile devices
 
 ### Blockchain
+
 - **📄 Smart Contract**: [0xBdD45C68f44Ef4d9db4F5dEa4F6f163dac88ac2f](https://sepolia-blockscout.lisk.com/address/0xBdD45C68f44Ef4d9db4F5dEa4F6f163dac88ac2f)
 - **🔍 Lisk Sepolia Explorer**: https://sepolia-blockscout.lisk.com
 - **💧 Lisk Faucet**: https://faucet.lisk.com
 - **🌐 Lisk Official**: https://lisk.com
 
 ### Development
+
 - **📂 Repository**: https://github.com/facundopadilla/v0-event-ticket
 - **🗄️ Supabase Dashboard**: https://supabase.com/dashboard
 - **⚡ Vercel Dashboard**: https://vercel.com/dashboard
@@ -447,6 +450,7 @@ CREATE TABLE profiles (
 **Created by Facundo Padilla (f4qn2)**
 
 This project was built entirely by **Facundo Padilla** as a solo developer, showcasing expertise in:
+
 - Full-stack web development (Next.js, React, TypeScript)
 - Blockchain development (Solidity, Smart Contracts)
 - UI/UX design and modern web technologies
@@ -455,7 +459,7 @@ This project was built entirely by **Facundo Padilla** as a solo developer, show
 ### 🌐 Connect with the Developer
 
 - **🌍 Website**: [facundopadilla.com](https://facundopadilla.com)
-- **🐦 Twitter**: [@facundopadilla_](https://x.com/facundopadilla_)
+- **🐦 Twitter**: [@facundopadilla\_](https://x.com/facundopadilla_)
 - **💼 LinkedIn**: [/in/facundopadilla](https://www.linkedin.com/in/facundopadilla/)
 - **📧 Contact**: Available through any of the above platforms
 
